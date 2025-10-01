@@ -1,0 +1,30 @@
+# Large data files - available separately via Google Drive
+Setup/cell_tower.csv
+Setup/support_tickets.csv
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Snowflake
+.snowflake/
+

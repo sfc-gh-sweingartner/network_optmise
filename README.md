@@ -87,6 +87,21 @@ The Heatmap Overlay page provides several powerful visualizations:
 
 
 ## Installation
+
+### Prerequisites: Data Files
+
+Due to GitHub file size limits, the large CSV data files are not included in this repository. You need to obtain them separately:
+
+**Required Data Files:**
+- `Setup/cell_tower.csv` (1.8 GB)
+- `Setup/support_tickets.csv` (73 MB)
+
+**How to get the data files:**
+- Contact stephen.weingartner@snowflake.com for access to the data files
+- Once obtained, place them in the `Setup/` directory before proceeding with installation
+
+### Installation Steps
+
 1. First run through the Setup / README_BACKUP.sql file to create the tables and upload the data into you environment.  
 2. In Snowsight, open a SQL worksheet and run this with ACCOUNTADMIN to allow your env to see this GIT project: CREATE OR REPLACE API INTEGRATION git_sweingartner API_PROVIDER = git_https_api API_ALLOWED_PREFIXES = ('https://github.com/sfc-gh-sweingartner') ENABLED = TRUE;
 3. click Projects > Streamlit
