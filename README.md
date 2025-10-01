@@ -90,21 +90,16 @@ The Heatmap Overlay page provides several powerful visualizations:
 
 ### Prerequisites: Data Files
 
-Due to GitHub file size limits, the large CSV data files are not included in this repository. You need to obtain them separately:
 
-**Required Data Files:**
-- `Setup/cell_tower.csv` (1.8 GB)
-- `Setup/support_tickets.csv` (73 MB)
 
-**How to get the data files:**
-- Contact stephen.weingartner@snowflake.com for access to the data files
-- Once obtained, place them in the `Setup/` directory before proceeding with installation
-
-### Installation Steps
+### Data Setup and Streamlit in Snowflake Installation Steps
 
 1. Download the data to your laptop:
-   - Support Tickets: https://drive.google.com/file/d/1OfWzNgwg2GdJ0xBuJCdWaoX_4gMQ8MPm/view?usp=sharing 
-   - Network Data: https://drive.google.com/file/d/1tDZZqXD1Xfb7N0nHb82YEVClQAb5XHyi/view?usp=sharing
+Due to GitHub file size limits, the large CSV data files are not included in this repository. You need to obtain them separately
+
+   - `Setup/support_tickets.csv` (73 MB): https://drive.google.com/file/d/1OfWzNgwg2GdJ0xBuJCdWaoX_4gMQ8MPm/view?usp=sharing 
+   - `Setup/cell_tower.csv` (1.8 GB): https://drive.google.com/file/d/1tDZZqXD1Xfb7N0nHb82YEVClQAb5XHyi/view?usp=sharing
+   - Once obtained, place them in the `Setup/` directory before proceeding with installation
    - If you have problems with access, contact stephen.weingartner@snowflake.com 
 2. Run through the Setup / README_BACKUP.sql file to create the tables and upload the data into you environment.  
 3. In Snowsight, open a SQL worksheet and run this with ACCOUNTADMIN to allow your env to see this GIT project: CREATE OR REPLACE API INTEGRATION git_sweingartner API_PROVIDER = git_https_api API_ALLOWED_PREFIXES = ('https://github.com/sfc-gh-sweingartner') ENABLED = TRUE;
@@ -122,6 +117,15 @@ Due to GitHub file size limits, the large CSV data files are not included in thi
 15. Open the code editor panel and add the following packages via the drop down box above the code: altair, branca, h3-py, matplotlib, numpy, pandas, plotly, pydeck, scipy 
 16. Run the script connectMapBoxNoKey.sql (note that the script shows you will need to find the app name and add it to the SQL)
 17. Reopen your app (or Run should work)
+
+
+### Snowflake Intelligence Setup
+1. In the Cortex Search directory, you will find a script to create some cortex searches.  Run that.
+2. When not using the demo, you should suspend all those searches to save money via the suspend script.  There is a resume script to allow you to use the demo again.  
+3. Save the SnowflakeIntelligence/telco_network_opt2.yaml to a stage location
+4. Create an cortex analyst semantic model using that yaml
+5. Add that semantic model to a cortex agent
+6. Use Snowflake intelligence to ask questions.  There are example questions in the same directory. 
 
 
 ## Troubleshooting
