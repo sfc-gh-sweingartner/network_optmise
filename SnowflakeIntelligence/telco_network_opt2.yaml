@@ -1,0 +1,1164 @@
+name: TELCO_NETWORK_OPT2
+tables:
+  - name: CELL_TOWER
+    synonyms:
+      - CELL_DATA
+      - CELL_INFO
+      - CELL_SITE_DATA
+      - CELL_TOWER
+      - CELL_TOWER_DETAILS
+      - CELL_TOWER_INFO
+      - CELLULAR_SITE
+      - CELLULAR_TOWER
+      - MOBILE_CELL_TOWER
+      - TOWER_DATA
+    description: This table stores data related to cell tower performance and usage metrics, including call events, network information, location data, and performance metrics such as latency, throughput, and connection establishment success rates, collected from various network elements and vendors.
+    base_table:
+      database: TELCO_NETWORK_OPTIMIZATION_PROD
+      schema: RAW
+      table: CELL_TOWER
+    dimensions:
+      - name: BID_DESCRIPTION
+        synonyms:
+          - bid_comment
+          - bid_details
+          - bid_explanation
+          - bid_info
+          - bid_note
+        description: Description of the cell tower's location or region, including the province or area it serves, and in some cases, the type of network technology used (e.g. LTE).
+        expr: BID_DESCRIPTION
+        data_type: VARCHAR
+        sample_values:
+          - ALBERTA (LTE)
+          - ALBERTA
+          - VANCOUVER ISLAND
+      - name: BID_SERVING_NETWORK
+        synonyms:
+          - bid_serving
+          - serving_network_bid
+          - serving_network_code
+          - serving_network_id
+          - serving_network_identifier
+        description: The unique identifier of the serving network provider for the cell tower.
+        expr: BID_SERVING_NETWORK
+        data_type: NUMBER
+        sample_values:
+          - '44195'
+          - '45626'
+          - '45628'
+      - name: CALL_EVENT_DESCRIPTION
+        synonyms:
+          - call_event_category
+          - call_event_code_description
+          - call_event_reason
+          - call_event_summary
+          - call_event_text
+          - call_event_type
+          - event_description
+        description: The type of event that triggered a call or data session on a cell tower, such as a voice call or data transmission initiated by a mobile device.
+        expr: CALL_EVENT_DESCRIPTION
+        data_type: VARCHAR
+        sample_values:
+          - GPRS Call
+          - MOBILE ORIGINATED EVENT
+      - name: CALL_ID
+        synonyms:
+          - call_identifier
+          - call_reference
+          - communication_id
+          - conversation_id
+          - session_id
+          - transaction_id
+        description: Unique identifier for a call made from a cell tower.
+        expr: CALL_ID
+        data_type: VARCHAR
+        sample_values:
+          - 8e8782146969c7829858b784a8eb0e44
+          - a4632d71f0d69471b4ad308e5d52ff06
+          - d8a691d355763a757e9eeaa35d06fb07
+      - name: CALL_RELEASE_CODE
+        synonyms:
+          - call_completion_code
+          - call_drop_code
+          - call_end_reason
+          - call_release_reason
+          - call_termination_code
+          - release_cause_code
+        description: The CALL_RELEASE_CODE column represents the reason why a call was released or terminated from a cell tower, with possible values indicating normal call completion (0), abnormal call termination (9), and call handover to another cell tower (70).
+        expr: CALL_RELEASE_CODE
+        data_type: NUMBER
+        sample_values:
+          - '0'
+          - '9'
+          - '70'
+      - name: CAUSE_CODE_LONG_DESCRIPTION
+        synonyms:
+          - call_release_cause_description
+          - call_termination_reason
+          - detailed_call_disconnect_reason
+          - detailed_call_release_reason
+          - reason_for_call_release
+        description: Description of the reason for a call being cleared or a network issue. Most records are null meaning the call was OK
+        expr: CAUSE_CODE_LONG_DESCRIPTION
+        data_type: VARCHAR
+        cortex_search_service:
+          database: TELCO_NETWORK_OPTIMIZATION_PROD
+          schema: RAW
+          service: NETWORK_OPTIMISE_CELL_TOWER_CAUSE_CODE_LONG_DESCRIPTION
+        sample_values:
+          - This cause indicates that a transit network identification was received which is of an incorrect format as defined in Annex C/Q.931
+          - This cause indicates that the call is being cleared because one of the users involved in the call has requested that the call be cleared. This could mean
+      - name: CAUSE_CODE_SHORT_DESCRIPTION
+        synonyms:
+          - abbreviated_call_release_cause
+          - brief_call_release_reason
+          - call_release_cause_summary
+          - reason_for_call_release
+          - short_call_release_description
+        description: A brief description of the reason for a cell tower's current status or outage.  Note that "CALL_OK" is the most common value meaning the call had no failures
+        expr: CAUSE_CODE_SHORT_DESCRIPTION
+        data_type: VARCHAR
+        cortex_search_service:
+          database: TELCO_NETWORK_OPTIMIZATION_PROD
+          schema: RAW
+          service: NETWORK_OPTIMISE_CELL_TOWER_CAUSE_CODE_SHORT_DESCRIPTION
+        sample_values:
+          - FACILITY_NOT_IMPLEMENTED
+          - CONNECTION_OUT_OF_SERVICE
+          - CHANNEL_TYPE_NOT_IMPLEMENTED
+          - CALL_OK
+      - name: CELL_ID
+        synonyms:
+          - base_station_id
+          - cell_identifier
+          - cell_number
+          - cell_reference
+          - cell_tower_id
+          - tower_id
+        description: Unique identifier for a specific cell tower in the network.
+        expr: CELL_ID
+        data_type: NUMBER
+        sample_values:
+          - '30380850'
+          - '30030006'
+          - '30982104'
+      - name: ENODEB_FUNCTION
+        synonyms:
+          - base_station_function
+          - cell_tower_function
+          - eNodeB_functionality
+          - eNodeB_mode
+          - eNodeB_operation_mode
+          - eNodeB_role
+          - eNodeB_type
+          - network_node_function
+        description: The type of function performed by the cell tower, where 10 represents a Macro cell and 14 represents a Small cell.
+        expr: ENODEB_FUNCTION
+        data_type: NUMBER
+        sample_values:
+          - '10'
+          - '14'
+      - name: HOME_NETWORK_COUNTRY
+        synonyms:
+          - country_of_origin
+          - country_of_registration
+          - home_country
+          - home_network_location
+          - network_country
+          - subscriber_country
+        description: The country where the cell tower is physically located and is the home network for the cell tower.
+        expr: HOME_NETWORK_COUNTRY
+        data_type: VARCHAR
+        sample_values:
+          - LOTRON
+          - UNITED KINGDOM
+          - UNITED STATES
+      - name: HOME_NETWORK_NAME
+        synonyms:
+          - home_carrier_name
+          - home_mobile_network_name
+          - home_operator_name
+          - home_provider_name
+          - home_telecom_name
+        description: The name of the cellular network that the device is currently connected to, indicating the user's home network provider.
+        expr: HOME_NETWORK_NAME
+        data_type: VARCHAR
+        sample_values:
+          - XXXXXX
+      - name: HOME_NETWORK_TAP_CODE
+        synonyms:
+          - home_network_code
+          - home_network_id
+          - home_network_identifier
+          - home_network_tap_id
+          - home_tap_code
+          - home_tap_identifier
+        description: The HOME_NETWORK_TAP_CODE column represents the unique identifier for the home network of a cell tower, indicating the country or region where the cell tower is located.
+        expr: HOME_NETWORK_TAP_CODE
+        data_type: VARCHAR
+        sample_values:
+          - GBRCL
+          - LOTRW
+          - JAMBN
+      - name: HOSTNAME
+        synonyms:
+          - computer_name
+          - host
+          - machine_name
+          - node_name
+          - server_identifier
+          - server_name
+        description: Unique identifier for a cell tower, combining the subnetwork and cell ID.
+        expr: HOSTNAME
+        data_type: VARCHAR
+        sample_values:
+          - SubNetwork=ONRM_ROOT_MO_R,MeContext=152489L2100
+      - name: IMEI_PREFIX
+        synonyms:
+          - device_id_prefix
+          - equipment_identifier_prefix
+          - imei_code_prefix
+          - mobile_device_prefix
+          - mobile_equipment_identifier_prefix
+        description: Unique identifier prefix for a mobile device's International Mobile Equipment Identity (IMEI) associated with a cell tower.
+        expr: IMEI_PREFIX
+        data_type: NUMBER
+        sample_values:
+          - '52949428'
+          - '91067316'
+          - '44163398'
+      - name: IMEI_SUFFIX
+        synonyms:
+          - imei_extension
+          - imei_last_digits
+          - imei_postfix
+          - imei_trailer
+          - imeisv
+        description: Unique identifier suffix for a mobile device's International Mobile Equipment Identity (IMEI) number, used to identify the device on a cellular network.
+        expr: IMEI_SUFFIX
+        data_type: NUMBER
+        sample_values:
+          - '371178'
+          - '371177'
+          - '549955'
+      - name: IMSI_PREFIX
+        synonyms:
+          - international_mobile_prefix
+          - mobile_id_prefix
+          - mobile_network_prefix
+          - subscriber_id_prefix
+          - subscriber_prefix_id
+        description: Unique identifier prefix assigned to a mobile device's SIM card by its home network, used to identify the country and network of the device.
+        expr: IMSI_PREFIX
+        data_type: NUMBER
+        sample_values:
+          - '310'
+          - '302'
+      - name: IMSI_SUFFIX
+        synonyms:
+          - imsi_extension
+          - mobile_id_suffix
+          - mobile_suffix_id
+          - subs_id
+          - subscriber_id_suffix
+        description: Unique identififer for a mobile device's SIM card, specifically the last 10 digits of the International Mobile Subscriber Identity (IMSI) number.
+        expr: IMSI_SUFFIX
+        data_type: NUMBER
+        sample_values:
+          - '220746884665'
+          - '220355859795'
+          - '220355859743'
+      - name: INDEX
+        synonyms:
+          - i
+          - identifier
+          - indicator
+          - key
+          - marker
+          - pointer
+          - position
+          - reference
+        description: A unique identifier for a cell tower, composed of a combination of ManagedElement, ENodeBFunction, EUtranCellFDD, UeMeasControl, and PmUeMeasControl values, which together provide a distinct reference to a specific cell tower entity.
+        expr: INDEX
+        data_type: VARCHAR
+        sample_values:
+          - ManagedElement=1,ENodeBFunction=12,EUtranCellFDD=30871862,UeMeasControl=1,PmUeMeasControl=1
+          - ManagedElement=1,ENodeBFunction=2,EUtranCellFDD=30977152,UeMeasControl=1,PmUeMeasControl=1
+          - ManagedElement=1,ENodeBFunction=7,EUtranCellFDD=31315249,UeMeasControl=1,PmUeMeasControl=1
+      - name: LOCATION_AREA_CODE
+        synonyms:
+          - area_code_number
+          - area_identifier
+          - geographic_area_code
+          - geographic_location_code
+          - location_coding
+          - location_identifier
+        description: A unique identifier for a geographic ar ea where a cell tower is located, typically a 5-digit code assigned by the wireless carrier to identify a specific area within their network.
+        expr: LOCATION_AREA_CODE
+        data_type: NUMBER
+        sample_values:
+          - '11123'
+          - '11088'
+          - '11184'
+      - name: LOOKUP_ID
+        synonyms:
+          - cross_reference_id
+          - identifier
+          - index_id
+          - lookup_key
+          - mapping_id
+          - reference_id
+          - reference_key
+        description: Unique identifier for a cell tower, used to reference specific cell towers in the database.
+        expr: LOOKUP_ID
+        data_type: NUMBER
+        sample_values:
+          - '4'
+          - '5'
+          - '8'
+      - name: MANAGED_ELEMENT
+        synonyms:
+          - controlled_component
+          - governed_item
+          - managed_object
+          - regulated_element
+          - supervised_entity
+        description: Indicates whether the cell tower is managed by the organization or not, with 1 representing a managed element.
+        expr: MANAGED_ELEMENT
+        data_type: NUMBER
+        sample_values:
+          - '1'
+      - name: MSISDN
+        synonyms:
+          - mobile_identity_number
+          - mobile_number
+          - mobile_station_id
+          - phone_number
+          - subscriber_number
+        description: Mobile Subscriber Integrated Services Digital Network (MSISDN) is a unique identifier for a mobile phone number, used to identify a mobile device on a cellular network.
+        expr: MSISDN
+        data_type: NUMBER
+        sample_values:
+          - '9664572299'
+          - '2351395424'
+          - '2508813524'
+      - name: ORIG_ID
+        synonyms:
+          - base_id
+          - initial_id
+          - original_identifier
+          - primary_key
+          - root_id
+          - source_id
+          - unique_identifier
+        description: Unique identifieer for the originating cell tower.
+        expr: ORIG_ID
+        data_type: NUMBER
+        sample_values:
+          - '5'
+          - '8'
+          - '4'
+      - name: PM_PDCP_LAT_PKT_TRANS_UL
+        synonyms:
+          - packet_transfer_delay_uplink
+          - packet_transmission_time_uplink
+          - uplink_latency_packets
+          - uplink_packet_latency
+          - uplink_packet_transmission_latency
+        description: Packet transmission latency for uplink data in the PDCP layer, measured in milliseconds, representing the time it takes for a packet to be transmitted from the cell tower to the core network.
+        expr: PM_PDCP_LAT_PKT_TRANS_UL
+        data_type: VARCHAR
+      - name: PM_PDCP_LAT_TIME_UL
+        synonyms:
+          - uplink_data_transfer_latency
+          - uplink_latency
+          - uplink_packet_delay
+          - uplink_packet_transfer_time
+          - uplink_transmission_time
+        description: The time it takes for data to travel from the cell tower to the packet data convergence protocol (PDCP) layer in the uplink direction, measured in latency.
+        expr: PM_PDCP_LAT_TIME_UL
+        data_type: VARCHAR
+        cortex_search_service:
+          database: TELCO_NETWORK_OPTIMIZATION_PROD
+          schema: RAW
+          service: NETWORK_OPTIMISE_CELL_TOWER_PM_PDCP_LAT_TIME_UL
+      - name: SENDER_NAME
+        synonyms:
+          - data_sender
+          - message_sender
+          - originator
+          - sender
+          - sender_identity
+          - source_name
+          - transmitter
+        description: The name of the sender entity that transmitted the data, including the subnetwork and MeContext identifiers.
+        expr: SENDER_NAME
+        data_type: VARCHAR
+        sample_values:
+          - SubNetwork=ONRM_ROOT_MO_R,MeContext=152489L2100
+      - name: SERVICE_CATEGORY
+        synonyms:
+          - category_of_service
+          - service_classification
+          - service_group
+          - service_type
+          - type_of_service
+        description: 'The type of service provided by the cell tower, which can be one of the following: SMS (Short Message Service) for text messaging, GPRS (General Packet Radio Service) for mobile internet, or VOICE for voice calls.'
+        expr: SERVICE_CATEGORY
+        data_type: VARCHAR
+        sample_values:
+          - SMS
+          - GPRS
+          - VOICE
+      - name: SERVING_NETWORK_TAP_CODE
+        synonyms:
+          - active_network_tap_id
+          - current_network_tap_code
+          - serving_carrier_code
+          - serving_network_code
+          - serving_tap_id
+        description: The unique identifier for the serving network that the cell tower is currently connected to.
+        expr: SERVING_NETWORK_TAP_CODE
+        data_type: VARCHAR
+        sample_values:
+          - CANTS
+      - name: UE_MEAS_CONTROL
+        synonyms:
+          - measurement_control_ue
+          - ue_control_measurement
+          - ue_measurement_control
+          - ue_measurement_setting
+          - user_equipment_measurement_control
+        description: User Equipment Measurement Control, indicating whether the cell tower is configured to control the measurement activities of the user equipment (UE) connected to it.
+        expr: UE_MEAS_CONTROL
+        data_type: NUMBER
+        sample_values:
+          - '1'
+      - name: UNIQUE_ID
+        synonyms:
+          - id
+          - identifier
+          - record_id
+          - row_id
+          - unique_identifier
+          - unique_key
+          - unique_record_id
+          - unique_row_id
+        description: A unique identifier for a specific cell tower, used to distinguish it from other cell towers in the network.
+        expr: UNIQUE_ID
+        data_type: VARCHAR
+        sample_values:
+          - 3d866f65f70d02f153c740fd71b3f358
+          - e4a617a9477b98d7a4ca8b15d85ff12c
+          - 55bce3b19ee95ec3052f23964d2e886a
+      - name: VENDOR_NAME
+        synonyms:
+          - company_name
+          - creator_name
+          - manufacturer_name
+          - organization_name
+          - producer_name
+          - provider_name
+          - seller_name
+          - supplier_name
+        description: The name of the vendor that manufactured the cell tower equipment.
+        expr: VENDOR_NAME
+        data_type: VARCHAR
+        sample_values:
+          - ERICSSON
+    time_dimensions:
+      - name: EVENT_DATE
+        synonyms:
+          - date_of_event
+          - date_of_occurrence
+          - event_occurrence
+          - event_time
+          - event_timestamp
+          - occurrence_date
+          - occurrence_timestamp
+        description: Date on which a specific event occurred at the cell tower.
+        expr: EVENT_DATE
+        data_type: DATE
+        sample_values:
+          - '2023-04-18'
+          - '2023-06-27'
+          - '2023-06-30'
+      - name: EVENT_DTTM
+        synonyms:
+          - event_date_time
+          - event_datetime
+          - event_datetime_stamp
+          - event_occurrence_time
+          - event_time
+          - event_timestamp
+          - timestamp_of_event
+        description: Date and time when the event occurred at the cell tower.
+        expr: EVENT_DTTM
+        data_type: TIMESTAMP_NTZ
+        sample_values:
+          - 2023-04-26T07:15:21.000+0000
+          - 2023-06-28T20:48:26.000+0000
+          - 2023-06-06T16:55:55.000+0000
+      - name: TIMESTAMP
+        synonyms:
+          - creation_time
+          - date
+          - datetime
+          - entry_time
+          - event_time
+          - log_time
+          - record_time
+          - time_of_creation
+          - time_of_event
+          - time_of_record
+          - timestamp_ntz
+        description: Date and time when the cell tower data was recorded or last updated.
+        expr: TIMESTAMP
+        data_type: TIMESTAMP_NTZ
+        sample_values:
+          - 2023-04-09T05:00:00.001+0000
+          - 2023-04-06T03:00:00.001+0000
+          - 2023-04-01T09:00:00.001+0000
+      - name: WINDOW_END_AT
+        synonyms:
+          - closing_time
+          - end_date
+          - end_time
+          - end_timestamp
+          - end_window
+          - expiration_time
+          - termination_time
+          - window_close
+        description: The date and time when the cell tower's data collection window ended.
+        expr: WINDOW_END_AT
+        data_type: TIMESTAMP_NTZ
+        sample_values:
+          - 2023-04-06T00:30:00.001+0000
+          - 2023-04-03T00:30:00.001+0000
+          - 2023-04-05T11:30:00.001+0000
+      - name: WINDOW_START_AT
+        synonyms:
+          - beginning_time
+          - initial_time
+          - initial_timestamp
+          - start_date
+          - start_datetime
+          - start_time
+          - start_timestamp
+          - window_open
+        description: The time at which a cell tower's data collection window starts.
+        expr: WINDOW_START_AT
+        data_type: TIMESTAMP_NTZ
+        sample_values:
+          - 2023-04-03T18:30:00.001+0000
+          - 2023-04-09T11:30:00.001+0000
+          - 2023-04-09T09:30:00.001+0000
+    facts:
+      - name: CELL_LATITUDE
+        synonyms:
+          - cell_latitude_value
+          - cell_location_latitude
+          - geographical_latitude
+          - latitude_coordinate
+          - latitude_position
+        description: The latitude coordinate of the cell tower's geographic location, measured in decimal degrees.
+        expr: CELL_LATITUDE
+        data_type: NUMBER
+        sample_values:
+          - '36.838017000'
+          - '33.760986000'
+          - '34.243870000'
+      - name: CELL_LONGITUDE
+        synonyms:
+          - cell_east_west_coordinate
+          - cell_easting
+          - cell_longitude_coordinate
+          - easting
+          - longitude
+        description: The longitude coordinate of the cell tower's geographical location, measured in decimal degrees, with negative values indicating west of the prime meridian.
+        expr: CELL_LONGITUDE
+        data_type: NUMBER
+        sample_values:
+          - '-118.304901000'
+          - '-117.184296000'
+          - '-121.464273000'
+      - name: CHARGED_UNITS
+        synonyms:
+          - billed_amount
+          - billed_quantity
+          - charged_quantity
+          - invoiced_units
+          - paid_units
+        description: The total number of units (e.g., minutes, texts, data) charged to a customer's account for a specific billing period.
+        expr: CHARGED_UNITS
+        data_type: NUMBER
+        sample_values:
+          - '97'
+          - '113'
+          - '155'
+      - name: DURATION
+        synonyms:
+          - elapsed_time
+          - interval
+          - length
+          - period
+          - span
+          - time_duration
+          - time_elapsed
+          - time_spent
+          - time_taken
+        description: The length of time, in seconds, that a mobile device was connected to a cell tower.
+        expr: DURATION
+        data_type: NUMBER
+        sample_values:
+          - '3600'
+      - name: PM_ACTIVE_UE_DL_MAX
+        synonyms:
+          - highest_active_ue_dl_value
+          - max_active_ue_dl
+          - max_active_ue_downlink_capacity
+          - max_downlink_active_ue
+          - peak_active_ue_downlink
+        description: Maximum number of active UEs (User Equipment) that can be supported by the cell tower for downlink (DL) transmission.
+        expr: PM_ACTIVE_UE_DL_MAX
+        data_type: NUMBER
+        sample_values:
+          - '33.00'
+          - '70.00'
+          - '28.00'
+      - name: PM_ACTIVE_UE_DL_SUM
+        synonyms:
+          - active_ue_downlink_total
+          - sum_active_ue_downlink
+          - sum_downlink_active_ue
+          - total_active_ue_downlink
+          - total_downlink_active_ue
+        description: The total number of active user equipment (UE) devices that are currently connected to the cell tower and are actively transmitting data in the downlink direction (i.e., receiving data from the tower).
+        expr: PM_ACTIVE_UE_DL_SUM
+        data_type: NUMBER
+        sample_values:
+          - '775531.00'
+          - '614351.00'
+          - '521006.00'
+      - name: PM_ACTIVE_UE_UL_MAX
+        synonyms:
+          - highest_uplink_active_ue
+          - max_uplink_active_ue
+          - max_uplink_ue_capacity
+          - uplink_active_ue_ceiling
+          - upper_limit_uplink_active_ue
+        description: Maximum number of active UEs (User Equipment) that can be supported by the cell tower for uplink transmission.
+        expr: PM_ACTIVE_UE_UL_MAX
+        data_type: NUMBER
+        sample_values:
+          - '70.00'
+          - '37.00'
+          - '61.00'
+      - name: PM_ACTIVE_UE_UL_SUM
+        synonyms:
+          - active_ue_ul_total
+          - sum_of_active_uplink_users
+          - total_active_uplink_ue
+          - total_uplink_active_users
+          - uplink_active_user_count
+        description: The total number of active user equipment (UE) upload traffic in the uplink direction, measured in bytes, summed across all cells in the tower.
+        expr: PM_ACTIVE_UE_UL_SUM
+        data_type: NUMBER
+        sample_values:
+          - '811141.00'
+          - '568173.00'
+          - '1027539.00'
+      - name: PM_ERAB_ESTAB_ATT_INIT
+        synonyms:
+          - erab_initial_access_attempts
+          - erab_setup_initiation_attempts
+          - initial_erab_connection_attempts
+          - initial_erab_establishment_attempts
+          - initial_erab_setup_attempts
+        description: The number of initial E-RAB setup attempts for packet data services on the cell tower.
+        expr: PM_ERAB_ESTAB_ATT_INIT
+        data_type: NUMBER
+        sample_values:
+          - '23758.00'
+          - '15164.00'
+          - '16058.00'
+      - name: PM_ERAB_ESTAB_SUCC_INIT
+        synonyms:
+          - erab_initial_connection_success_rate
+          - initial_erab_activation_successes
+          - initial_erab_setup_successes
+          - successful_erab_initial_establishments
+          - successful_initial_erab_establishment_attempts
+        description: The number of successful initial E-RAB (E-UTRAN Radio Access Bearer) establishments in the cell tower.
+        expr: PM_ERAB_ESTAB_SUCC_INIT
+        data_type: NUMBER
+        sample_values:
+          - '13867.00'
+          - '22687.00'
+          - '16798.00'
+      - name: PM_ERAB_REL_ABNORMAL_ENB
+        synonyms:
+          - abnormal_enb_release_count
+          - abnormal_erab_release_enb
+          - enb_erab_release_abnormal
+          - enb_initiated_abnormal_erab_release
+          - enb_initiated_erab_release
+          - enb_triggered_erab_release
+          - erab_release_by_enb_abnormal
+          - erab_release_enb_abnormal
+        description: Percentage of abnormal E-RAB release events at the eNodeB (base station) level.
+        expr: PM_ERAB_REL_ABNORMAL_ENB
+        data_type: NUMBER
+        sample_values:
+          - '78.00'
+          - '77.00'
+          - '53.00'
+      - name: PM_ERAB_REL_ABNORMAL_ENB_ACT
+        synonyms:
+          - abnormal_erab_release_enb_initiated
+          - abnormal_erab_release_enb_triggered
+          - enb_initiated_erab_release_abnormal
+          - enb_triggered_erab_release_abnormal
+          - erab_release_abnormal_enb_action
+        description: The number of abnormal ENB (Evolved Node B) active releases of E-RAB (E-UTRAN Radio Access Bearer) per minute, indicating the rate at which the eNodeB is actively releasing E-RABs due to abnormal conditions.
+        expr: PM_ERAB_REL_ABNORMAL_ENB_ACT
+        data_type: NUMBER
+        sample_values:
+          - '41.00'
+          - '19.00'
+          - '26.00'
+      - name: PM_ERAB_REL_MME
+        synonyms:
+          - erab_release_by_mme
+          - erab_release_mme_initiated
+          - mme_erab_release_count
+          - mme_initiated_erab_release
+          - mme_triggered_erab_release
+        description: Number of E-RAB Release Requests Sent from eNodeB to MME.
+        expr: PM_ERAB_REL_MME
+        data_type: NUMBER
+        sample_values:
+          - '250.00'
+          - '73.00'
+          - '103.00'
+      - name: PM_ERAB_REL_NORMAL_ENB
+        synonyms:
+          - enb_erab_release_normal
+          - enb_normal_erab_release_count
+          - erab_release_normal_enb_count
+          - normal_enb_erab_release
+          - normal_erab_release_enb
+        description: Number of normal eNodeB (evolved Node B) releases for Evolved Radio Access Bearer (E-RAB) in the cell tower.
+        expr: PM_ERAB_REL_NORMAL_ENB
+        data_type: NUMBER
+        sample_values:
+          - '1498.00'
+          - '752.00'
+          - '1257.00'
+      - name: PM_PDCP_LAT_PKT_TRANS_DL
+        synonyms:
+          - downlink_latency_packets
+          - downlink_packet_transfer_latency
+          - packet_transfer_delay_downlink
+          - packet_transfer_time_downlink
+          - pdcch_latency_downlink
+        description: The total number of downlink packets transmitted by the cell tower in the PDCP (Packet Data Convergence Protocol) layer, measured in packets.
+        expr: PM_PDCP_LAT_PKT_TRANS_DL
+        data_type: NUMBER
+        sample_values:
+          - '630980.00'
+          - '455656.00'
+      - name: PM_PDCP_LAT_TIME_DL
+        synonyms:
+          - average_downlink_latency
+          - average_pdcch_latency_dl
+          - downlink_latency
+          - downlink_transmission_time
+          - pdcch_latency_dl
+          - pdcch_latency_time_dl
+          - pdcch_transmission_latency_dl
+        description: The total latency time in milliseconds for downlink data transmission at the physical and medium access control (MAC) layers, measured from the time the packet data convergence protocol (PDCP) layer receives the data to the time it is transmitted over the air interface.
+        expr: PM_PDCP_LAT_TIME_DL
+        data_type: NUMBER
+        sample_values:
+          - '3509600.00'
+          - '4434376.00'
+          - '7445934.00'
+      - name: PM_PDCP_VOL_DL_DRB
+        synonyms:
+          - downlink_data_rate
+          - downlink_data_throughput
+          - downlink_data_transfer
+          - downlink_data_transferred
+          - downlink_data_transmission
+          - downlink_data_volume
+          - downlink_data_volume_delivered
+          - downlink_packet_data
+        description: The total downlink data volume in bytes for all dedicated radio bearers (DRBs) served by the cell tower during the measurement period.
+        expr: PM_PDCP_VOL_DL_DRB
+        data_type: NUMBER
+        sample_values:
+          - '21703807.00'
+          - '20311550.00'
+          - '43626439.00'
+      - name: PM_PDCP_VOL_DL_DRB_LAST_TTI
+        synonyms:
+          - downlink_data_volume_last_transmission
+          - downlink_data_volume_last_transmission_time_interval
+          - downlink_data_volume_last_tti
+          - last_downlink_data_volume
+          - last_transmission_time_interval_downlink_data_volume
+        description: The total downlink data volume in bytes for all radio bearers (RBs) served by the cell tower during the last transmission time interval (TTI) for the PDCP (Packet Data Convergence Protocol) layer.
+        expr: PM_PDCP_VOL_DL_DRB_LAST_TTI
+        data_type: NUMBER
+        sample_values:
+          - '1161493.00'
+          - '1090125.00'
+          - '1075819.00'
+      - name: PM_PRB_UTIL_DL
+        synonyms:
+          - dl_prb_usage
+          - downlink_channel_utilization
+          - downlink_prb_utilization
+          - downlink_resource_block_utilization
+          - prb_downlink_efficiency
+        description: Percentage of downlink PRB (Physical Resource Blocks) utilization for the cell tower, indicating the proportion of available resources being used for downlink transmissions.
+        expr: PM_PRB_UTIL_DL
+        data_type: NUMBER
+        sample_values:
+          - '100.00'
+          - '0.00'
+          - '97.00'
+      - name: PM_PRB_UTIL_UL
+        synonyms:
+          - uplink_channel_utilization
+          - uplink_prb_usage
+          - uplink_prb_utilization
+          - uplink_resource_allocation_ratio
+          - uplink_resource_block_utilization
+        description: Percentage of Physical Resource Blocks (PRBs) utilized for Uplink (UL) traffic in a cell tower, indicating the proportion of available resources being used for data transmission from mobile devices to the tower.
+        expr: PM_PRB_UTIL_UL
+        data_type: NUMBER
+        sample_values:
+          - '100.00'
+          - '75.00'
+      - name: PM_RRC_CONN_ESTAB_ATT
+        synonyms:
+          - initial_connection_attempts
+          - radio_resource_control_connection_establishment_attempts
+          - rrc_conn_estab_attempts
+          - rrc_connection_establishment_attempts
+          - rrc_setup_attempts
+        description: The number of times a mobile device attempted to establish a Radio Resource Control (RRC) connection with the cell tower, but the connection was not successfully established.
+        expr: PM_RRC_CONN_ESTAB_ATT
+        data_type: NUMBER
+        sample_values:
+          - '26911.00'
+          - '19513.00'
+      - name: PM_RRC_CONN_ESTAB_ATT_REATT
+        synonyms:
+          - failed_rrc_connection_retries
+          - reattempted_rrc_connection_establishments
+          - reestablished_rrc_connections
+          - repeated_rrc_connection_attempts
+          - rrc_reconnection_attempts
+        description: The number of times a mobile device attempted to re-establish a Radio Resource Control (RRC) connection with the cell tower after a failed initial attempt.
+        expr: PM_RRC_CONN_ESTAB_ATT_REATT
+        data_type: NUMBER
+        sample_values:
+          - '22364.00'
+          - '10960.00'
+          - '21389.00'
+      - name: PM_RRC_CONN_ESTAB_SUCC
+        synonyms:
+          - established_rrc_connections
+          - rrc_connection_success_rate
+          - rrc_setup_success_count
+          - successful_rrc_connections
+          - successful_rrc_setup
+        description: The number of successful RRC (Radio Resource Control) connection establishment attempts made by the cell tower.
+        expr: PM_RRC_CONN_ESTAB_SUCC
+        data_type: NUMBER
+        sample_values:
+          - '19306.00'
+          - '12037.00'
+          - '10025.00'
+      - name: PM_RRC_CONN_MAX
+        synonyms:
+          - highest_rrc_connections
+          - max_rrc_connections
+          - max_rrc_sessions
+          - maximum_rrc_connections
+          - peak_rrc_connections
+          - rrc_connection_peak
+        description: Maximum number of simultaneous RRC (Radio Resource Control) connections supported by the cell tower.
+        expr: PM_RRC_CONN_MAX
+        data_type: NUMBER
+        sample_values:
+          - '733.00'
+          - '910.00'
+          - '1174.00'
+      - name: PM_S1_SIG_CONN_ESTAB_ATT
+        synonyms:
+          - s1_connection_establishment_attempts
+          - s1_sig_conn_estab_attempts
+          - s1_sig_conn_setup_attempts
+          - s1_signal_connection_establishment_attempts
+          - s1_signal_link_establishment_attempts
+        description: The total number of successful signal connection establishments attempted on the cell tower.
+        expr: PM_S1_SIG_CONN_ESTAB_ATT
+        data_type: NUMBER
+        sample_values:
+          - '18734.00'
+          - '13269.00'
+          - '11405.00'
+      - name: PM_S1_SIG_CONN_ESTAB_SUCC
+        synonyms:
+          - established_s1_signal_connections
+          - s1_connection_success_count
+          - s1_signal_connection_success_rate
+          - successful_s1_handovers
+          - successful_s1_signal_connections
+        description: The total number of successful signal connection establishments on the cell tower.
+        expr: PM_S1_SIG_CONN_ESTAB_SUCC
+        data_type: NUMBER
+        sample_values:
+          - '19295.00'
+          - '14016.00'
+      - name: PM_UE_MEAS_CONTROL
+        synonyms:
+          - pm_ue_meas_ctrl
+          - pm_ue_measurement_control_flag
+          - ue_meas_control_param
+          - ue_measurement_control
+          - ue_measurement_control_parameter
+        description: This column indicates whether the UE (User Equipment) measurement control is enabled (1) or disabled (0) for the cell tower, allowing or preventing the UE from reporting measurement data to the network.
+        expr: PM_UE_MEAS_CONTROL
+        data_type: NUMBER
+        sample_values:
+          - '1'
+      - name: PM_UE_MEAS_RSRP_DELTA_INTRA_FREQ1
+        synonyms:
+          - intra_freq_rsrp_offset
+          - intra_frequency_rsrp_difference
+          - intra_frequency_signal_strength_diff
+          - rsrp_intra_freq_deviation
+          - serving_cell_rsrp_delta
+        description: The difference in Reference Signal Received Power (RSRP) between the serving cell and the strongest neighboring cell on the same frequency.
+        expr: PM_UE_MEAS_RSRP_DELTA_INTRA_FREQ1
+        data_type: NUMBER
+        sample_values:
+          - '0'
+      - name: PM_UE_MEAS_RSRP_SERV_INTRA_FREQ1
+        synonyms:
+          - intra_freq1_reference_signal_power
+          - intra_freq1_serving_cell_rsrp
+          - serving_cell_reference_signal_power_intra_freq1
+          - serving_cell_rsrp_intra_freq1
+          - serving_cell_signal_strength_intra_freq1
+        description: Reference Signal Received Power (RSRP) measurement for the serving cell on the same frequency layer as the current cell.
+        expr: PM_UE_MEAS_RSRP_SERV_INTRA_FREQ1
+        data_type: NUMBER
+        sample_values:
+          - '0'
+      - name: PM_UE_MEAS_RSRQ_DELTA_INTRA_FREQ1
+        synonyms:
+          - intra_freq_rsrq_offset
+          - intra_frequency_rsrq_difference
+          - intra_frequency_rsrq_variance
+          - rsrq_intra_freq_deviation
+          - rsrq_intra_frequency_delta
+        description: The difference in Reference Signal Received Quality (RSRQ) between the serving cell and the strongest neighboring cell on the same frequency.
+        expr: PM_UE_MEAS_RSRQ_DELTA_INTRA_FREQ1
+        data_type: NUMBER
+        sample_values:
+          - '0'
+      - name: PM_UE_MEAS_RSRQ_SERV_INTRA_FREQ1
+        synonyms:
+          - intra_frequency_reference_signal_quality1
+          - intra_frequency_serving_cell_quality1
+          - reference_signal_received_quality_intra_frequency1
+          - reference_signal_to_noise_ratio_intra_frequency1
+          - serving_cell_reference_signal_quality1
+        description: Reference Signal Received Quality (RSRQ) measurement for the serving cell on the same frequency layer as the primary component carrier.
+        expr: PM_UE_MEAS_RSRQ_SERV_INTRA_FREQ1
+        data_type: NUMBER
+        sample_values:
+          - '0'
+      - name: PM_UE_THP_TIME_DL
+        synonyms:
+          - dl_thp_time
+          - dl_throughput_time
+          - downlink_thp_time
+          - downlink_throughput_time
+          - throughput_time_downlink
+        description: Total Uplink Throughput Time for User Equipment in Downlink Direction, measured in milliseconds.
+        expr: PM_UE_THP_TIME_DL
+        data_type: NUMBER
+        sample_values:
+          - '604671.00'
+          - '483550.00'
+          - '757703.00'
+    primary_key:
+      columns:
+        - CELL_ID
+  - name: SUPPORT_TICKETS
+    synonyms:
+      - customer_cases
+      - customer_inquiries
+      - customer_support
+      - helpdesk_tickets
+      - issue_tickets
+      - service_requests
+      - support_tickets
+      - technical_support_requests
+    description: This table stores information about customer support tickets, including the ticket ID, customer details, service type, request description, contact preference, cell ID, sentiment score of the request, and the timestamp when the ticket was backed up.
+    base_table:
+      database: TELCO_NETWORK_OPTIMIZATION_PROD
+      schema: RAW
+      table: SUPPORT_TICKETS
+    dimensions:
+      - name: CELL_ID
+        synonyms:
+          - cell_identifier
+          - cell_number
+          - mobile_id
+          - mobile_identifier
+          - mobile_number
+          - phone_id
+        description: Unique identifier for a cell or location in a network, used to track and manage support tickets related to specific cell sites.
+        expr: CELL_ID
+        data_type: NUMBER
+        sample_values:
+          - '30966040'
+          - '30510464'
+          - '29429966'
+      - name: CONTACT_PREFERENCE
+        synonyms:
+          - communication_preference
+          - contact_choice
+          - contact_option
+          - preferred_communication_channel
+          - preferred_contact_method
+        description: The preferred method of communication for the customer submitting the support ticket.
+        expr: CONTACT_PREFERENCE
+        data_type: VARCHAR
+        sample_values:
+          - Text Message
+          - Email
+      - name: CUSTOMER_EMAIL
+        synonyms:
+          - client_email
+          - contact_email
+          - customer_contact_email
+          - email_address
+          - email_id
+          - user_email
+        description: The email address of the customer who submitted the support ticket.
+        expr: CUSTOMER_EMAIL
+        data_type: VARCHAR
+        sample_values:
+          - Jennifer.C@mirror.com
+          - ltaylor@keyboard.co.uk
+          - Katherine.W@phone.com
+      - name: CUSTOMER_NAME
+        synonyms:
+          - account_holder
+          - account_name
+          - account_owner
+          - client_full_name
+          - client_name
+          - customer_full_name
+          - customer_title
+        description: The name of the customer who submitted the support ticket.
+        expr: CUSTOMER_NAME
+        data_type: VARCHAR
+        sample_values:
+          - Laura
+          - Katherine
+          - Jennifer
+      - name: REQUEST
+        synonyms:
+          - appeal
+          - application
+          - demand
+          - inquiry
+          - petition
+          - proposal
+          - query
+          - submission
+        description: This column contains customer support requests, including descriptions of issues, complaints, and service requests, which are used to track and resolve customer inquiries and problems.
+        expr: REQUEST
+        data_type: VARCHAR
+        cortex_search_service:
+          database: TELCO_NETWORK_OPTIMIZATION_PROD
+          schema: RAW
+          service: NETWORK_OPTIMISE_SUPPORT_TICKETS_REQUEST
+        sample_values:
+          - I traveled to the UK and was charged $150 for international data usage. These charges were not communicated to me before my trip. Please refund these fees.
+          - Good day, I am writing to request the termination of my account associated with my email, effective June 2024. I have appreciated the services but will no longer require them. Please confirm the receipt of this request and let me know if there are any additional steps needed. Thank you for your attention.
+          - Greetings, I'm writing to request a new line be added to my existing cell phone plan. Could you please have it activated within 3 days? Let me know if there's anything else you need from me. Thanks for your quick response.
+      - name: SERVICE_TYPE
+        synonyms:
+          - issue_type
+          - request_type
+          - service_category
+          - service_classification
+          - service_request_category
+          - support_type
+          - ticket_category
+        description: The type of service related to the support ticket, such as cellular, business internet, or home internet.
+        expr: SERVICE_TYPE
+        data_type: VARCHAR
+        sample_values:
+          - Cellular
+          - Business Internet
+          - Home Internet
+      - name: TICKET_ID
+        synonyms:
+          - case_id
+          - incident_number
+          - issue_id
+          - request_id
+          - service_request_id
+          - support_request_number
+          - ticket_number
+        description: Unique identifier for a support ticket.
+        expr: TICKET_ID
+        data_type: VARCHAR
+        sample_values:
+          - TR95557
+          - TR19755
+          - TR85784
+    facts:
+      - name: SENTIMENT_SCORE
+        synonyms:
+          - attitude_rating
+          - emotion_rating
+          - emotional_response
+          - feeling_measure
+          - opinion_score
+          - sentiment_value
+        description: A score indicating the sentiment of the support ticket, ranging from -1 (very negative) to 1 (very positive), with 0 being neutral, representing the emotional tone and attitude expressed by the customer in the ticket.
+        expr: SENTIMENT_SCORE
+        data_type: FLOAT
+        sample_values:
+          - '0.6913144'
+          - '0.46654055'
+          - '-0.7914929'
+    primary_key:
+      columns:
+        - TICKET_ID
+    unique_keys:
+      - columns:
+          - CELL_ID
+relationships:
+  - name: Support2Cell
+    join_type: left_outer
+    relationship_type: many_to_one
+    left_table: CELL_TOWER
+    relationship_columns:
+      - left_column: CELL_ID
+        right_column: CELL_ID
+    right_table: SUPPORT_TICKETS
+custom_instructions: 'Unless specifically asked to bring back multiple date fields, only bring back one date or date time field rather than multiple columns.    for facts, nvl all columns to zero.  Unless asked to bring back any  time or date field avoid bringing them back.  '

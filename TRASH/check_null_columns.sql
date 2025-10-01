@@ -1,0 +1,34 @@
+-- Check for columns with all null or zero values
+SELECT 
+    -- ERAB columns
+    COUNT(*) as total_rows,
+    COUNT(PM_ERAB_ESTAB_ATT_INIT) as erab_att_count,
+    COUNT(PM_ERAB_ESTAB_SUCC_INIT) as erab_succ_count,
+    SUM(CASE WHEN PM_ERAB_ESTAB_ATT_INIT IS NULL OR PM_ERAB_ESTAB_ATT_INIT = 0 THEN 1 ELSE 0 END) as erab_att_null_or_zero,
+    SUM(CASE WHEN PM_ERAB_ESTAB_SUCC_INIT IS NULL OR PM_ERAB_ESTAB_SUCC_INIT = 0 THEN 1 ELSE 0 END) as erab_succ_null_or_zero,
+    
+    -- S1 Signal columns
+    COUNT(PM_S1_SIG_CONN_ESTAB_ATT) as s1_att_count,
+    COUNT(PM_S1_SIG_CONN_ESTAB_SUCC) as s1_succ_count,
+    SUM(CASE WHEN PM_S1_SIG_CONN_ESTAB_ATT IS NULL OR PM_S1_SIG_CONN_ESTAB_ATT = 0 THEN 1 ELSE 0 END) as s1_att_null_or_zero,
+    SUM(CASE WHEN PM_S1_SIG_CONN_ESTAB_SUCC IS NULL OR PM_S1_SIG_CONN_ESTAB_SUCC = 0 THEN 1 ELSE 0 END) as s1_succ_null_or_zero,
+    
+    -- UE measurement columns
+    COUNT(PM_UE_MEAS_RSRP_DELTA_INTRA_FREQ1) as rsrp_delta_count,
+    COUNT(PM_UE_MEAS_RSRP_SERV_INTRA_FREQ1) as rsrp_serv_count,
+    COUNT(PM_UE_MEAS_RSRQ_DELTA_INTRA_FREQ1) as rsrq_delta_count,
+    COUNT(PM_UE_MEAS_RSRQ_SERV_INTRA_FREQ1) as rsrq_serv_count,
+    SUM(CASE WHEN PM_UE_MEAS_RSRP_DELTA_INTRA_FREQ1 IS NULL OR PM_UE_MEAS_RSRP_DELTA_INTRA_FREQ1 = 0 THEN 1 ELSE 0 END) as rsrp_delta_null_or_zero,
+    SUM(CASE WHEN PM_UE_MEAS_RSRP_SERV_INTRA_FREQ1 IS NULL OR PM_UE_MEAS_RSRP_SERV_INTRA_FREQ1 = 0 THEN 1 ELSE 0 END) as rsrp_serv_null_or_zero,
+    SUM(CASE WHEN PM_UE_MEAS_RSRQ_DELTA_INTRA_FREQ1 IS NULL OR PM_UE_MEAS_RSRQ_DELTA_INTRA_FREQ1 = 0 THEN 1 ELSE 0 END) as rsrq_delta_null_or_zero,
+    SUM(CASE WHEN PM_UE_MEAS_RSRQ_SERV_INTRA_FREQ1 IS NULL OR PM_UE_MEAS_RSRQ_SERV_INTRA_FREQ1 = 0 THEN 1 ELSE 0 END) as rsrq_serv_null_or_zero,
+    
+    -- Throughput columns
+    COUNT(PM_UE_THP_TIME_DL) as thp_time_count,
+    COUNT(PM_PDCP_VOL_DL_DRB) as vol_dl_count,
+    COUNT(PM_PDCP_VOL_DL_DRB_LAST_TTI) as vol_last_tti_count,
+    SUM(CASE WHEN PM_UE_THP_TIME_DL IS NULL OR PM_UE_THP_TIME_DL = 0 THEN 1 ELSE 0 END) as thp_time_null_or_zero,
+    SUM(CASE WHEN PM_PDCP_VOL_DL_DRB IS NULL OR PM_PDCP_VOL_DL_DRB = 0 THEN 1 ELSE 0 END) as vol_dl_null_or_zero,
+    SUM(CASE WHEN PM_PDCP_VOL_DL_DRB_LAST_TTI IS NULL OR PM_PDCP_VOL_DL_DRB_LAST_TTI = 0 THEN 1 ELSE 0 END) as vol_last_tti_null_or_zero
+FROM TELCO_NETWORK_OPTIMIZATION_PROD.RAW.CELL_TOWER;
+
