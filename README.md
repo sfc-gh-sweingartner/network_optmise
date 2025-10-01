@@ -102,14 +102,18 @@ Due to GitHub file size limits, the large CSV data files are not included in thi
 
 ### Installation Steps
 
-1. First run through the Setup / README_BACKUP.sql file to create the tables and upload the data into you environment.  
-2. In Snowsight, open a SQL worksheet and run this with ACCOUNTADMIN to allow your env to see this GIT project: CREATE OR REPLACE API INTEGRATION git_sweingartner API_PROVIDER = git_https_api API_ALLOWED_PREFIXES = ('https://github.com/sfc-gh-sweingartner') ENABLED = TRUE;
-3. click Projects > Streamlit
-4. Tick the drop downbox next to the blue "+ Streamlit App" and select "create from repository"
-5. Click "Create Git Repository"
-6. In the Repository URL field, enter: https://github.com/sfc-gh-sweingartner/network_optmise
-7. You can leave the repository name as the default
-8. In the API Integration drop down box, choose GIT_SWEINGARTNER
+1. Download the data to your laptop:
+   - Support Tickets: https://drive.google.com/file/d/1OfWzNgwg2GdJ0xBuJCdWaoX_4gMQ8MPm/view?usp=sharing 
+   - Network Data: https://drive.google.com/file/d/1tDZZqXD1Xfb7N0nHb82YEVClQAb5XHyi/view?usp=sharing
+   - If you have problems with access, contact stephen.weingartner@snowflake.com 
+2. Run through the Setup / README_BACKUP.sql file to create the tables and upload the data into you environment.  
+3. In Snowsight, open a SQL worksheet and run this with ACCOUNTADMIN to allow your env to see this GIT project: CREATE OR REPLACE API INTEGRATION git_sweingartner API_PROVIDER = git_https_api API_ALLOWED_PREFIXES = ('https://github.com/sfc-gh-sweingartner') ENABLED = TRUE;
+4. click Projects > Streamlit
+5. Tick the drop downbox next to the blue "+ Streamlit App" and select "create from repository"
+6. Click "Create Git Repository"
+7. In the Repository URL field, enter: https://github.com/sfc-gh-sweingartner/network_optmise
+8. You can leave the repository name as the default
+9. In the API Integration drop down box, choose GIT_SWEINGARTNER
 10. Deploy it into the TELCO_NETWORK_OPTIMIZATION_PROD database and RAW schema, and use any WH
 11. Click Home.py then "Select File"
 12. Choose the db TELCO_NETWORK_OPTIMIZATION_PROD and schema RAW
@@ -121,4 +125,4 @@ Due to GitHub file size limits, the large CSV data files are not included in thi
 
 
 ## Troubleshooting
-contact stephen.weingartner@snowflake.com 
+If you hit any issues, ask a vibe coding tool to assist or contact stephen.weingartner@snowflake.com 
