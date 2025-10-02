@@ -1,6 +1,7 @@
 # Large data files - available separately via Google Drive
-Setup/cell_tower.csv
-Setup/support_tickets.csv
+*.csv
+Setup/*.csv
+TRASH/**/*.csv
 
 # Python
 __pycache__/
