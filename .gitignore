@@ -1,7 +1,9 @@
 # Large data files - available separately via Google Drive
 *.csv
 Setup/*.csv
-TRASH/**/*.csv
+
+# TRASH folder - should not be in version control
+TRASH/
 
 # Python
 __pycache__/
