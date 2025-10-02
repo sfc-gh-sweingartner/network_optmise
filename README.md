@@ -98,7 +98,7 @@ The Heatmap Overlay page provides several powerful visualizations:
 Due to GitHub file size limits, the large CSV data files are not included in this repository. You need to obtain them separately
 
    - `Setup/support_tickets.csv` (73 MB): https://drive.google.com/file/d/1OfWzNgwg2GdJ0xBuJCdWaoX_4gMQ8MPm/view?usp=sharing 
-   - `Setup/cell_tower.csv` (1.8 GB): https://drive.google.com/file/d/1tDZZqXD1Xfb7N0nHb82YEVClQAb5XHyi/view?usp=sharing
+   - `Setup/cell_tower.csv` (1.8 GB): https://drive.google.com/file/d/1oXgHiRm-gnk5NBSsH_sfA7sHAjkvKPc8/view?usp=sharing
    - Once obtained, place them in the `Setup/` directory before proceeding with installation
    - If you have problems with access, contact stephen.weingartner@snowflake.com 
 2. Run through the Setup / README_BACKUP.sql file to create the tables and upload the data into you environment.  
@@ -126,6 +126,12 @@ Due to GitHub file size limits, the large CSV data files are not included in thi
 4. Create an cortex analyst semantic model using that yaml
 5. Add that semantic model to a cortex agent
 6. Use Snowflake intelligence to ask questions.  There are example questions in the same directory. 
+
+### Streaming additional data into the two tables
+1. See the Setup/README_DATA_GENERATORS.md for info of how to stream data
+2. run Setup/setup_data_generators.sql to set up two tasks
+3. start and stop the tasks by calling Setup/manage_data_generators.sql 
+
 
 
 ## Troubleshooting
