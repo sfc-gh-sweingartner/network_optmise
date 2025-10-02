@@ -1,8 +1,10 @@
-# Quick Start Guide - Hourly Data Generators
+# Quick Start Guide - Demo Streaming Mode
 
 ## ✅ Status: READY TO USE
 
-All generators have been configured to generate hourly data matching your production pattern.
+All generators have been configured for **DEMO STREAMING MODE** - tasks run every minute, generating data with timestamps that increment by 1 hour.
+
+**Demo Effect:** 1 minute of real time = 1 hour of data time (perfect for demos!)
 
 ---
 
@@ -12,15 +14,16 @@ All generators have been configured to generate hourly data matching your produc
 USE DATABASE TELCO_NETWORK_OPTIMIZATION_PROD;
 USE SCHEMA GENERATE;
 
--- Start both generators
+-- Start both generators (SERVERLESS tasks)
 ALTER TASK TASK_GENERATE_CELL_TOWER_DATA RESUME;
 ALTER TASK TASK_GENERATE_SUPPORT_TICKET RESUME;
 ```
 
 **What Happens:**
-- Every hour: ~14,000 new cell tower records (one per CELL_ID)
-- Every hour: 1 new support ticket
+- Every MINUTE: ~14,000 new cell tower records (one per CELL_ID, timestamp +1 HOUR)
+- Every MINUTE: 1 new support ticket
 - Data written to test tables: `CELL_TOWER_TEST` and `SUPPORT_TICKETS_TEST`
+- Serverless compute automatically managed by Snowflake
 
 ---
 
@@ -55,7 +58,7 @@ SHOW TASKS LIKE 'TASK_GENERATE%' IN SCHEMA GENERATE;
 
 ## ⏰ Timestamp Pattern
 
-Your data follows this hourly pattern:
+Your data uses timestamps that increment by 1 HOUR:
 
 | Column | Pattern | Example (for 22:00 hour) |
 |--------|---------|--------------------------|
@@ -64,21 +67,22 @@ Your data follows this hourly pattern:
 | **WINDOW_START_AT** | 30 min before + .001ms | `2025-10-01 21:30:00.001` |
 | **WINDOW_END_AT** | 30 min after + .001ms | `2025-10-01 22:30:00.001` |
 
-This matches your production `RAW.CELL_TOWER` table exactly.
+**Demo Mode:** Tasks generate these hourly timestamps every MINUTE (1 min real time = 1 hour data time).
 
 ---
 
-## 🔧 What Was Fixed
+## 🔧 Configuration History
 
-### 1. Production Data ✅
+### Production Data Fixed ✅
 - Fixed 2,051,779 NULL timestamps in `RAW.CELL_TOWER`
-- All timestamps now follow the hourly pattern
+- All timestamps now follow the hourly increment pattern
 - No data loss or corruption
 
-### 2. Generators Updated ✅
-- Changed from per-minute to hourly generation
-- Timestamp pattern matches production
-- Tasks schedule: `60 MINUTE` (hourly)
+### Generators Configured for Demo Mode ✅
+- Tasks run every MINUTE (demo streaming)
+- Timestamps increment by 1 HOUR per execution
+- Serverless compute (no warehouse needed)
+- Effect: Fast-forward time for demos (60x speed)
 
 ---
 
@@ -86,10 +90,9 @@ This matches your production `RAW.CELL_TOWER` table exactly.
 
 | File | Purpose |
 |------|---------|
+| `setup_data_generators.sql` | Initial setup (run once) |
 | `manage_data_generators.sql` | Control & monitor generators |
-| `HOURLY_GENERATOR_SUMMARY.md` | Detailed update documentation |
-| `fix_null_timestamps.sql` | Script that fixed production NULLs |
-| `update_generators_to_hourly.sql` | Script that updated generators |
+| `HOURLY_GENERATOR_SUMMARY.md` | Historical update documentation |
 
 ---
 
@@ -192,21 +195,27 @@ ALTER TASK TASK_GENERATE_CELL_TOWER_DATA RESUME;
    ```
 
 ### Timestamps Don't Match Pattern?
-- Verify you're using the updated procedure
-- Check that `update_generators_to_hourly.sql` was run
+- Verify you're using the latest `setup_data_generators.sql`
 - Manually test: `CALL SP_GENERATE_CELL_TOWER_DATA();`
+- Check that timestamps increment by exactly 1 hour
+
+### Tasks Not Running?
+- Confirm they're resumed: `SHOW TASKS LIKE 'TASK_GENERATE%';`
+- Check for EXECUTE MANAGED TASK privilege
+- Review task history for errors
 
 ---
 
 ## 📞 Need Help?
 
 1. Check `manage_data_generators.sql` for monitoring queries
-2. Review `HOURLY_GENERATOR_SUMMARY.md` for detailed information
+2. Review `HOURLY_GENERATOR_SUMMARY.md` for historical information
 3. Verify pattern: Compare test data to production using comparison queries
 
 ---
 
-**Last Updated:** October 1, 2025
-**Pattern:** Hourly generation at HH:00:00.001
+**Last Updated:** October 2, 2025
+**Mode:** Demo Streaming (1 minute = 1 hour of data)
+**Compute:** Serverless
 **Status:** ✅ Fully Tested and Ready
 

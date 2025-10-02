@@ -1,11 +1,16 @@
 -- ===============================================================================
--- DATA GENERATOR MANAGEMENT SCRIPT
+-- DATA GENERATOR MANAGEMENT SCRIPT - DEMO STREAMING MODE
 -- ===============================================================================
--- This script provides commands to control and monitor the HOURLY data generators
+-- This script provides commands to control and monitor the data generators
 --
--- SCHEDULE: Tasks run every 60 MINUTES (hourly)
--- OUTPUT: ~14,000 cell tower records per hour (one per CELL_ID)
---         1 support ticket per hour
+-- DEMO MODE: Tasks run every 1 MINUTE, generating data with timestamps that
+--            increment by 1 HOUR. This creates a "fast-forward" streaming demo.
+--
+-- SCHEDULE: Tasks run every 1 MINUTE (serverless compute)
+-- OUTPUT: ~14,000 cell tower records per minute (one per CELL_ID, timestamp +1 HOUR)
+--         1 support ticket per minute
+--
+-- EFFECT: 1 minute of real time = 1 hour of data time (great for demos!)
 --
 -- USAGE:
 --   - Uncomment and run individual sections as needed
@@ -20,18 +25,18 @@ USE SCHEMA GENERATE;
 -- ===============================================================================
 -- Uncomment these lines to start generating data
 
--- ALTER TASK GENERATE.TASK_GENERATE_CELL_TOWER_DATA RESUME;
--- ALTER TASK GENERATE.TASK_GENERATE_SUPPORT_TICKET RESUME;
--- SELECT 'Data generators started' AS STATUS;
+ ALTER TASK GENERATE.TASK_GENERATE_CELL_TOWER_DATA RESUME;
+ ALTER TASK GENERATE.TASK_GENERATE_SUPPORT_TICKET RESUME;
+ SELECT 'Data generators started' AS STATUS;
 
 -- ===============================================================================
 -- STOP DATA GENERATORS
 -- ===============================================================================
 -- Uncomment these lines to stop generating data
 
--- ALTER TASK GENERATE.TASK_GENERATE_CELL_TOWER_DATA SUSPEND;
--- ALTER TASK GENERATE.TASK_GENERATE_SUPPORT_TICKET SUSPEND;
--- SELECT 'Data generators stopped' AS STATUS;
+ ALTER TASK GENERATE.TASK_GENERATE_CELL_TOWER_DATA SUSPEND;
+ ALTER TASK GENERATE.TASK_GENERATE_SUPPORT_TICKET SUSPEND;
+ SELECT 'Data generators stopped' AS STATUS;
 
 -- ===============================================================================
 -- CHECK TASK STATUS
@@ -63,7 +68,7 @@ SELECT
     COUNT(DISTINCT CELL_ID) AS UNIQUE_CELL_IDS
 FROM GENERATE.SUPPORT_TICKETS_TEST;
 
--- View hourly breakdown
+-- View breakdown by timestamp hour (each timestamp represents 1 hour of data)
 SELECT 
     TIMESTAMP AS HOUR,
     COUNT(*) AS RECORDS,
@@ -190,7 +195,7 @@ LIMIT 20;
 -- VERIFY TIMESTAMP PATTERN (SHOULD MATCH PRODUCTION)
 -- ===============================================================================
 
--- Verify hourly pattern: TIMESTAMP should be HH:00:00.001
+-- Verify timestamp pattern: TIMESTAMP should increment by 1 hour with pattern HH:00:00.001
 SELECT 
     'Timestamp Pattern Check' AS CHECK_NAME,
     COUNT(*) AS TOTAL_RECORDS,

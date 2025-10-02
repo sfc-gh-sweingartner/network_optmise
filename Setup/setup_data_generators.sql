@@ -1,11 +1,18 @@
 -- ===============================================================================
--- DATA GENERATOR SETUP SCRIPT
+-- DATA GENERATOR SETUP SCRIPT - DEMO STREAMING MODE
 -- ===============================================================================
 -- This script creates:
 -- 1. GENERATE schema with test tables
 -- 2. Reference tables for data generation
 -- 3. Stored procedures for generating cell tower and support ticket data
--- 4. Snowflake tasks that run every minute
+-- 4. SERVERLESS Snowflake tasks that run every MINUTE
+--
+-- DEMO MODE: Tasks run every MINUTE, generating data with timestamps that
+--            increment by 1 HOUR. This creates a "fast-forward" streaming demo
+--            where 1 minute of real time = 1 hour of data time.
+--
+-- PATTERN: Generates one row per CELL_ID per MINUTE (timestamp increments by 1 HOUR)
+-- TIMESTAMP: Top of hour with .001 milliseconds (e.g., 22:00:00.001, then 23:00:00.001)
 --
 -- USAGE:
 --   - Run this script once to set up everything
@@ -20,11 +27,11 @@ USE DATABASE TELCO_NETWORK_OPTIMIZATION_PROD;
 
 CREATE SCHEMA IF NOT EXISTS GENERATE;
 
--- Create test tables with same structure as production tables
-CREATE OR REPLACE TABLE GENERATE.CELL_TOWER_TEST LIKE RAW.CELL_TOWER;
-CREATE OR REPLACE TABLE GENERATE.SUPPORT_TICKETS_TEST LIKE RAW.SUPPORT_TICKETS;
+-- Note: Generator procedures now write directly to production tables:
+--   - RAW.CELL_TOWER
+--   - RAW.SUPPORT_TICKETS
 
-SELECT 'Step 1 Complete: GENERATE schema and test tables created' AS STATUS;
+SELECT 'Step 1 Complete: GENERATE schema created' AS STATUS;
 
 -- ===============================================================================
 -- STEP 2: CREATE REFERENCE TABLES
@@ -156,15 +163,16 @@ DECLARE
     new_timestamp TIMESTAMP_NTZ;
     rows_inserted INT;
 BEGIN
-    -- Get the latest timestamp from test table, or use current time if empty
-    SELECT COALESCE(MAX(EVENT_DTTM), CURRENT_TIMESTAMP()) INTO :latest_timestamp
-    FROM GENERATE.CELL_TOWER_TEST;
+            -- Get the latest TIMESTAMP from production table, or use current hour if empty
+            SELECT COALESCE(MAX(TIMESTAMP), DATEADD(MILLISECOND, 1, DATE_TRUNC('HOUR', CURRENT_TIMESTAMP())))
+            INTO :latest_timestamp
+            FROM TELCO_NETWORK_OPTIMIZATION_PROD.RAW.CELL_TOWER;
     
-    -- New timestamp is 1 minute after the latest
-    new_timestamp := DATEADD(MINUTE, 1, :latest_timestamp);
+    -- New timestamp is 1 HOUR after the latest, with .001 milliseconds
+    new_timestamp := DATEADD(HOUR, 1, :latest_timestamp);
     
     -- Generate one row for each cell ID
-    INSERT INTO GENERATE.CELL_TOWER_TEST (
+    INSERT INTO TELCO_NETWORK_OPTIMIZATION_PROD.RAW.CELL_TOWER (
         CELL_ID, CALL_RELEASE_CODE, LOOKUP_ID, HOME_NETWORK_TAP_CODE, SERVING_NETWORK_TAP_CODE,
         IMSI_PREFIX, IMEI_PREFIX, HOME_NETWORK_NAME, HOME_NETWORK_COUNTRY, BID_SERVING_NETWORK,
         BID_DESCRIPTION, SERVICE_CATEGORY, CALL_EVENT_DESCRIPTION, ORIG_ID, EVENT_DATE,
@@ -182,102 +190,119 @@ BEGIN
         PM_S1_SIG_CONN_ESTAB_SUCC, PM_S1_SIG_CONN_ESTAB_ATT, PM_ERAB_ESTAB_SUCC_INIT, PM_ERAB_ESTAB_ATT_INIT,
         PM_PRB_UTIL_DL, PM_PRB_UTIL_UL, UNIQUE_ID
     )
+    WITH base_data AS (
+        SELECT 
+            ref.*,
+            -- Determine service category once
+            CASE WHEN UNIFORM(1, 100, RANDOM()) <= 60 THEN 'VOICE'
+                 WHEN UNIFORM(1, 100, RANDOM()) <= 85 THEN 'GPRS'
+                 ELSE 'SMS' END AS svc_cat,
+            -- Call release code
+            CASE WHEN UNIFORM(1, 100, RANDOM()) <= 85 THEN 0
+                 WHEN UNIFORM(1, 100, RANDOM()) <= 95 THEN 9
+                 ELSE 70 END AS rel_code,
+            -- TIMESTAMP = Top of hour with .001 milliseconds
+            :new_timestamp AS ts_hour,
+            -- EVENT_DTTM = Random time within the hour
+            DATEADD(SECOND, UNIFORM(0, 3599, RANDOM()), DATEADD(MILLISECOND, -1, :new_timestamp)) AS event_ts,
+            -- WINDOW_START_AT = 30 minutes before the hour with .001 milliseconds
+            DATEADD(MINUTE, -30, :new_timestamp) AS window_start,
+            -- WINDOW_END_AT = 30 minutes after the hour with .001 milliseconds
+            DATEADD(MINUTE, 30, :new_timestamp) AS window_end
+        FROM GENERATE.REF_CELL_TOWER_ATTRIBUTES ref
+    )
     SELECT 
-        ref.CELL_ID,
-        -- Call release code based on performance tier
-        CASE WHEN UNIFORM(1, 100, RANDOM()) <= 85 THEN 0
-             WHEN UNIFORM(1, 100, RANDOM()) <= 95 THEN 9
-             ELSE 70 END,
-        ref.CELL_ID,
-        ref.HOME_NETWORK_TAP_CODE,
+        CELL_ID,
+        rel_code,
+        CELL_ID,
+        HOME_NETWORK_TAP_CODE,
         'CANTS',
         CASE 
-            WHEN ref.HOME_NETWORK_TAP_CODE = 'CANTS' THEN 302
-            WHEN ref.HOME_NETWORK_TAP_CODE = 'USNYC' THEN 310
-            WHEN ref.HOME_NETWORK_TAP_CODE = 'GBRCL' THEN 234
+            WHEN HOME_NETWORK_TAP_CODE = 'CANTS' THEN 302
+            WHEN HOME_NETWORK_TAP_CODE = 'USNYC' THEN 310
+            WHEN HOME_NETWORK_TAP_CODE = 'GBRCL' THEN 234
             ELSE 540 END,
         40000000 + UNIFORM(1, 99999999, RANDOM()),
-        ref.HOME_NETWORK_NAME,
-        ref.HOME_NETWORK_COUNTRY,
+        HOME_NETWORK_NAME,
+        HOME_NETWORK_COUNTRY,
         44000 + UNIFORM(1, 999, RANDOM()),
-        ref.BID_DESCRIPTION,
-        -- Service mix
-        CASE WHEN UNIFORM(1, 100, RANDOM()) <= 60 THEN 'VOICE'
-             WHEN UNIFORM(1, 100, RANDOM()) <= 85 THEN 'GPRS'
-             ELSE 'SMS' END,
-        CASE WHEN SERVICE_CATEGORY = 'VOICE' THEN 'MOBILE ORIGINATED CALL'
-             WHEN SERVICE_CATEGORY = 'GPRS' THEN 'GPRS DATA SESSION'
+        BID_DESCRIPTION,
+        svc_cat,
+        CASE WHEN svc_cat = 'VOICE' THEN 'MOBILE ORIGINATED CALL'
+             WHEN svc_cat = 'GPRS' THEN 'GPRS DATA SESSION'
              ELSE 'SMS DELIVERY' END,
-        ref.CELL_ID,
-        DATE(:new_timestamp),
+        CELL_ID,
+        DATE(ts_hour),
         200000000000 + UNIFORM(1, 999999999999, RANDOM()),
         300000 + UNIFORM(1, 999999, RANDOM()),
-        ref.LOCATION_AREA_CODE,
-        CASE WHEN SERVICE_CATEGORY = 'VOICE' THEN UNIFORM(60, 1800, RANDOM())
-             WHEN SERVICE_CATEGORY = 'GPRS' THEN UNIFORM(1000, 100000, RANDOM())
+        LOCATION_AREA_CODE,
+        CASE WHEN svc_cat = 'VOICE' THEN UNIFORM(60, 1800, RANDOM())
+             WHEN svc_cat = 'GPRS' THEN UNIFORM(1000, 100000, RANDOM())
              ELSE 1 END,
         9000000000 + UNIFORM(1, 999999999, RANDOM()),
-        :new_timestamp,
-        MD5(TO_VARCHAR(ref.CELL_ID) || TO_VARCHAR(:new_timestamp)),
+        event_ts,
+        MD5(TO_VARCHAR(CELL_ID) || TO_VARCHAR(ts_hour)),
         -- Cause codes
-        CASE WHEN CALL_RELEASE_CODE = 0 THEN 'NORMAL_CALL_CLEARING'
-             WHEN CALL_RELEASE_CODE = 9 THEN 
+        CASE WHEN rel_code = 0 THEN 'NORMAL_CALL_CLEARING'
+             WHEN rel_code = 9 THEN 
                 CASE WHEN UNIFORM(1, 100, RANDOM()) <= 30 THEN 'NETWORK_CONGESTION'
                      WHEN UNIFORM(1, 100, RANDOM()) <= 60 THEN 'CHANNEL_TYPE_NOT_IMPLEMENTED'
                      WHEN UNIFORM(1, 100, RANDOM()) <= 80 THEN 'CONNECTION_OUT_OF_SERVICE'
                      ELSE 'FACILITY_NOT_IMPLEMENTED' END
              ELSE 'HANDOVER_SUCCESSFUL' END,
-        CASE WHEN CALL_RELEASE_CODE = 0 THEN 'Call completed successfully without any issues'
-             WHEN CAUSE_CODE_SHORT_DESCRIPTION = 'NETWORK_CONGESTION' THEN 'This cause indicates that the network is experiencing high traffic volume and cannot process additional calls at this time'
-             WHEN CAUSE_CODE_SHORT_DESCRIPTION = 'CHANNEL_TYPE_NOT_IMPLEMENTED' THEN 'The requested channel type is not implemented or supported by the network element'
-             WHEN CAUSE_CODE_SHORT_DESCRIPTION = 'CONNECTION_OUT_OF_SERVICE' THEN 'The connection has been lost due to equipment failure or maintenance activities'
+        CASE WHEN rel_code = 0 THEN 'Call completed successfully without any issues'
+             WHEN UNIFORM(1, 100, RANDOM()) <= 30 THEN 'This cause indicates that the network is experiencing high traffic volume and cannot process additional calls at this time'
+             WHEN UNIFORM(1, 100, RANDOM()) <= 60 THEN 'The requested channel type is not implemented or supported by the network element'
+             WHEN UNIFORM(1, 100, RANDOM()) <= 80 THEN 'The connection has been lost due to equipment failure or maintenance activities'
              ELSE 'Call was successfully handed over to another cell tower for continued service' END,
-        ref.CELL_LATITUDE,
-        ref.CELL_LONGITUDE,
-        'SubNetwork=ONRM_ROOT_MO_R,MeContext=' || ref.CELL_ID || 'L2100',
-        ref.VENDOR_NAME,
-        'SubNetwork=ONRM_ROOT_MO_R,MeContext=' || ref.CELL_ID || 'L2100',
-        :new_timestamp,
-        CASE WHEN SERVICE_CATEGORY = 'VOICE' THEN UNIFORM(30, 1800, RANDOM())
-             WHEN SERVICE_CATEGORY = 'GPRS' THEN UNIFORM(60, 7200, RANDOM())
+        CELL_LATITUDE,
+        CELL_LONGITUDE,
+        'SubNetwork=ONRM_ROOT_MO_R,MeContext=' || CELL_ID || 'L2100',
+        VENDOR_NAME,
+        'SubNetwork=ONRM_ROOT_MO_R,MeContext=' || CELL_ID || 'L2100',
+        ts_hour,  -- TIMESTAMP column
+        CASE WHEN svc_cat = 'VOICE' THEN UNIFORM(30, 1800, RANDOM())
+             WHEN svc_cat = 'GPRS' THEN UNIFORM(60, 7200, RANDOM())
              ELSE UNIFORM(1, 10, RANDOM()) END,
         1,
-        ref.ENODEB_FUNCTION,
-        DATEADD(MINUTE, -30, :new_timestamp),
-        DATEADD(MINUTE, 30, :new_timestamp),
+        ENODEB_FUNCTION,
+        window_start,  -- WINDOW_START_AT
+        window_end,    -- WINDOW_END_AT
         'ManagedElement=1,ENodeBFunction=' || UNIFORM(1, 20, RANDOM()) || 
-        ',EUtranCellFDD=' || ref.CELL_ID || ',UeMeasControl=1,PmUeMeasControl=1',
+        ',EUtranCellFDD=' || CELL_ID || ',UeMeasControl=1,PmUeMeasControl=1',
         1,
         1,
         -- Performance metrics based on performance tier
-        CASE WHEN ref.ENODEB_FUNCTION = 10 THEN
-            CASE WHEN ref.BID_DESCRIPTION LIKE '%(5G)%' THEN UNIFORM(50, 120, RANDOM())
+        CASE WHEN ENODEB_FUNCTION = 10 THEN
+            CASE WHEN BID_DESCRIPTION LIKE '%(5G)%' THEN UNIFORM(50, 120, RANDOM())
                  ELSE UNIFORM(30, 80, RANDOM()) END
         ELSE UNIFORM(10, 40, RANDOM()) END::DECIMAL(38,2),
-        CASE WHEN ref.ENODEB_FUNCTION = 10 THEN UNIFORM(500000, 1500000, RANDOM())
+        CASE WHEN ENODEB_FUNCTION = 10 THEN UNIFORM(500000, 1500000, RANDOM())
              ELSE UNIFORM(100000, 600000, RANDOM()) END::DECIMAL(38,2),
-        CASE WHEN ref.ENODEB_FUNCTION = 10 THEN UNIFORM(40, 100, RANDOM())
+        CASE WHEN ENODEB_FUNCTION = 10 THEN UNIFORM(40, 100, RANDOM())
              ELSE UNIFORM(15, 50, RANDOM()) END::DECIMAL(38,2),
-        CASE WHEN ref.ENODEB_FUNCTION = 10 THEN UNIFORM(400000, 1200000, RANDOM())
+        CASE WHEN ENODEB_FUNCTION = 10 THEN UNIFORM(400000, 1200000, RANDOM())
              ELSE UNIFORM(80000, 500000, RANDOM()) END::DECIMAL(38,2),
-        CASE WHEN ref.ENODEB_FUNCTION = 10 THEN UNIFORM(800, 1500, RANDOM())
+        CASE WHEN ENODEB_FUNCTION = 10 THEN UNIFORM(800, 1500, RANDOM())
              ELSE UNIFORM(200, 600, RANDOM()) END::DECIMAL(38,2),
         -- Latency based on performance tier
-        CASE ref.PERFORMANCE_TIER
+        CASE PERFORMANCE_TIER
             WHEN 'CATASTROPHIC' THEN ROUND(40 + (UNIFORM(0, 15, RANDOM())) + (UNIFORM(0, 99, RANDOM()) * 0.01), 2)
             WHEN 'VERY_BAD' THEN ROUND(30 + (UNIFORM(0, 12, RANDOM())) + (UNIFORM(0, 99, RANDOM()) * 0.01), 2)
             WHEN 'BAD' THEN ROUND(22 + (UNIFORM(0, 10, RANDOM())) + (UNIFORM(0, 99, RANDOM()) * 0.01), 2)
             WHEN 'QUITE_BAD' THEN ROUND(15 + (UNIFORM(0, 8, RANDOM())) + (UNIFORM(0, 99, RANDOM()) * 0.01), 2)
             WHEN 'PROBLEMATIC' THEN ROUND(10 + (UNIFORM(0, 5, RANDOM())) + (UNIFORM(0, 99, RANDOM()) * 0.01), 2)
             ELSE 
-                CASE WHEN ref.BID_DESCRIPTION LIKE '%(5G)%' THEN ROUND(8 + (UNIFORM(0, 4, RANDOM())) + (UNIFORM(0, 99, RANDOM()) * 0.01), 2)
+                CASE WHEN BID_DESCRIPTION LIKE '%(5G)%' THEN ROUND(8 + (UNIFORM(0, 4, RANDOM())) + (UNIFORM(0, 99, RANDOM()) * 0.01), 2)
                      ELSE ROUND(10 + (UNIFORM(0, 5, RANDOM())) + (UNIFORM(0, 99, RANDOM()) * 0.01), 2) END
-        END,
-        ROUND(PM_PDCP_LAT_TIME_DL * (0.1 + (UNIFORM(0, 20, RANDOM()) * 0.01)), 2),
+        END AS lat_dl,
+        -- PM_PDCP_LAT_PKT_TRANS_DL: Large independent value (not derived from lat_dl)
+        CASE WHEN BID_DESCRIPTION LIKE '%(5G)%' THEN UNIFORM(300000, 800000, RANDOM())
+             ELSE UNIFORM(400000, 1200000, RANDOM()) END::DECIMAL(38,2),
         -- Uplink latency as string
         TO_VARCHAR(
             ROUND(
-                CASE ref.PERFORMANCE_TIER
+                CASE PERFORMANCE_TIER
                     WHEN 'CATASTROPHIC' THEN 80 + (UNIFORM(0, 30, RANDOM())) + (UNIFORM(0, 99, RANDOM()) * 0.01)
                     WHEN 'VERY_BAD' THEN 60 + (UNIFORM(0, 25, RANDOM())) + (UNIFORM(0, 99, RANDOM()) * 0.01)
                     WHEN 'BAD' THEN 45 + (UNIFORM(0, 20, RANDOM())) + (UNIFORM(0, 99, RANDOM()) * 0.01)
@@ -286,21 +311,22 @@ BEGIN
                     ELSE 20 + (UNIFORM(0, 10, RANDOM())) + (UNIFORM(0, 99, RANDOM()) * 0.01)
                 END
             , 2)
-        ),
-        TO_VARCHAR(ROUND(CAST(PM_PDCP_LAT_TIME_UL AS NUMBER) * (0.1 + (UNIFORM(0, 20, RANDOM()) * 0.01)), 2)),
+        ) AS lat_ul,
+        -- PM_PDCP_LAT_PKT_TRANS_UL: NULL to match production data
+        NULL,
         UNIFORM(400000, 1000000, RANDOM())::DECIMAL(38,2),
         -- Data volume
-        CASE ref.PERFORMANCE_TIER
+        CASE PERFORMANCE_TIER
             WHEN 'CATASTROPHIC' THEN 8000000 + (UNIFORM(0, 7000000, RANDOM()))
             WHEN 'VERY_BAD' THEN 12000000 + (UNIFORM(0, 10000000, RANDOM()))
             WHEN 'BAD' THEN 18000000 + (UNIFORM(0, 15000000, RANDOM()))
             WHEN 'QUITE_BAD' THEN 22000000 + (UNIFORM(0, 18000000, RANDOM()))
             WHEN 'PROBLEMATIC' THEN 28000000 + (UNIFORM(0, 20000000, RANDOM()))
             ELSE 35000000 + (UNIFORM(0, 25000000, RANDOM()))
-        END::DECIMAL(38,2),
-        ROUND(PM_PDCP_VOL_DL_DRB * (0.03 + (UNIFORM(0, 30, RANDOM()) * 0.001)), 0),
+        END::DECIMAL(38,2) AS vol_dl,
+        ROUND(vol_dl * (0.03 + (UNIFORM(0, 30, RANDOM()) * 0.001)), 0),
         -- Signal quality
-        CASE ref.PERFORMANCE_TIER
+        CASE PERFORMANCE_TIER
             WHEN 'CATASTROPHIC' THEN 8 + (UNIFORM(0, 8, RANDOM()))
             WHEN 'VERY_BAD' THEN 6 + (UNIFORM(0, 7, RANDOM()))
             WHEN 'BAD' THEN 4 + (UNIFORM(0, 6, RANDOM()))
@@ -308,7 +334,7 @@ BEGIN
             WHEN 'PROBLEMATIC' THEN 2 + (UNIFORM(0, 4, RANDOM()))
             ELSE 0 + (UNIFORM(0, 3, RANDOM()))
         END,
-        CASE ref.PERFORMANCE_TIER
+        CASE PERFORMANCE_TIER
             WHEN 'CATASTROPHIC' THEN -105 - (UNIFORM(0, 10, RANDOM()))
             WHEN 'VERY_BAD' THEN -95 - (UNIFORM(0, 10, RANDOM()))
             WHEN 'BAD' THEN -85 - (UNIFORM(0, 10, RANDOM()))
@@ -316,7 +342,7 @@ BEGIN
             WHEN 'PROBLEMATIC' THEN -68 - (UNIFORM(0, 10, RANDOM()))
             ELSE -55 - (UNIFORM(0, 15, RANDOM()))
         END,
-        CASE ref.PERFORMANCE_TIER
+        CASE PERFORMANCE_TIER
             WHEN 'CATASTROPHIC' THEN 5 + (UNIFORM(0, 6, RANDOM()))
             WHEN 'VERY_BAD' THEN 4 + (UNIFORM(0, 5, RANDOM()))
             WHEN 'BAD' THEN 3 + (UNIFORM(0, 4, RANDOM()))
@@ -324,7 +350,7 @@ BEGIN
             WHEN 'PROBLEMATIC' THEN 1 + (UNIFORM(0, 3, RANDOM()))
             ELSE 0 + (UNIFORM(0, 2, RANDOM()))
         END,
-        CASE ref.PERFORMANCE_TIER
+        CASE PERFORMANCE_TIER
             WHEN 'CATASTROPHIC' THEN -18 - (UNIFORM(0, 5, RANDOM()))
             WHEN 'VERY_BAD' THEN -15 - (UNIFORM(0, 4, RANDOM()))
             WHEN 'BAD' THEN -12 - (UNIFORM(0, 4, RANDOM()))
@@ -333,7 +359,7 @@ BEGIN
             ELSE -4 - (UNIFORM(0, 4, RANDOM()))
         END,
         -- E-RAB metrics
-        CASE ref.PERFORMANCE_TIER
+        CASE PERFORMANCE_TIER
             WHEN 'CATASTROPHIC' THEN ROUND(20.0 + (UNIFORM(0, 500, RANDOM()) * 0.01), 2)
             WHEN 'VERY_BAD' THEN ROUND(15.0 + (UNIFORM(0, 500, RANDOM()) * 0.01), 2)
             WHEN 'BAD' THEN ROUND(10.0 + (UNIFORM(0, 500, RANDOM()) * 0.01), 2)
@@ -341,7 +367,7 @@ BEGIN
             WHEN 'PROBLEMATIC' THEN ROUND(2.0 + (UNIFORM(0, 300, RANDOM()) * 0.01), 2)
             ELSE ROUND(0.1 + (UNIFORM(0, 190, RANDOM()) * 0.01), 2)
         END,
-        CASE ref.PERFORMANCE_TIER
+        CASE PERFORMANCE_TIER
             WHEN 'CATASTROPHIC' THEN ROUND(22.0 + (UNIFORM(0, 300, RANDOM()) * 0.01), 2)
             WHEN 'VERY_BAD' THEN ROUND(17.0 + (UNIFORM(0, 300, RANDOM()) * 0.01), 2)
             WHEN 'BAD' THEN ROUND(12.0 + (UNIFORM(0, 300, RANDOM()) * 0.01), 2)
@@ -349,7 +375,7 @@ BEGIN
             WHEN 'PROBLEMATIC' THEN ROUND(3.5 + (UNIFORM(0, 250, RANDOM()) * 0.01), 2)
             ELSE ROUND(0.5 + (UNIFORM(0, 200, RANDOM()) * 0.01), 2)
         END,
-        CASE ref.PERFORMANCE_TIER
+        CASE PERFORMANCE_TIER
             WHEN 'CATASTROPHIC' THEN 200 + (UNIFORM(0, 300, RANDOM()))
             WHEN 'VERY_BAD' THEN 400 + (UNIFORM(0, 600, RANDOM()))
             WHEN 'BAD' THEN 600 + (UNIFORM(0, 800, RANDOM()))
@@ -357,7 +383,7 @@ BEGIN
             WHEN 'PROBLEMATIC' THEN 1000 + (UNIFORM(0, 800, RANDOM()))
             ELSE 1200 + (UNIFORM(0, 800, RANDOM()))
         END,
-        CASE ref.PERFORMANCE_TIER
+        CASE PERFORMANCE_TIER
             WHEN 'CATASTROPHIC' THEN 80 + (UNIFORM(0, 120, RANDOM()))
             WHEN 'VERY_BAD' THEN 60 + (UNIFORM(0, 80, RANDOM()))
             WHEN 'BAD' THEN 40 + (UNIFORM(0, 60, RANDOM()))
@@ -365,7 +391,7 @@ BEGIN
         END,
         -- RRC connection metrics
         ROUND(UNIFORM(15000, 35000, RANDOM()) * 
-            CASE ref.PERFORMANCE_TIER
+            CASE PERFORMANCE_TIER
                 WHEN 'CATASTROPHIC' THEN (1 - UNIFORM(0.4, 0.8, RANDOM()))
                 WHEN 'VERY_BAD' THEN (1 - UNIFORM(0.2, 0.5, RANDOM()))
                 WHEN 'BAD' THEN (1 - UNIFORM(0.1, 0.3, RANDOM()))
@@ -380,7 +406,7 @@ BEGIN
         UNIFORM(12000, 25000, RANDOM())::DECIMAL(38,2),
         -- E-RAB establishment
         ROUND(UNIFORM(18000, 32000, RANDOM()) * 
-            CASE ref.PERFORMANCE_TIER
+            CASE PERFORMANCE_TIER
                 WHEN 'CATASTROPHIC' THEN (0.55 + UNIFORM(0, 10, RANDOM()) * 0.01)
                 WHEN 'VERY_BAD' THEN (0.65 + UNIFORM(0, 10, RANDOM()) * 0.01)
                 WHEN 'BAD' THEN (0.75 + UNIFORM(0, 10, RANDOM()) * 0.01)
@@ -390,30 +416,36 @@ BEGIN
             END, 0)::DECIMAL(38,2),
         UNIFORM(18000, 32000, RANDOM())::DECIMAL(38,2),
         -- PRB utilization
-        CASE ref.PERFORMANCE_TIER
+        CASE PERFORMANCE_TIER
             WHEN 'CATASTROPHIC' THEN 90 + (UNIFORM(0, 10, RANDOM()))
             WHEN 'VERY_BAD' THEN 75 + (UNIFORM(0, 20, RANDOM()))
             WHEN 'BAD' THEN 60 + (UNIFORM(0, 25, RANDOM()))
             WHEN 'QUITE_BAD' THEN 45 + (UNIFORM(0, 25, RANDOM()))
             WHEN 'PROBLEMATIC' THEN 30 + (UNIFORM(0, 25, RANDOM()))
-            ELSE 
-                CASE 
-                    WHEN ref.BID_DESCRIPTION LIKE '%LONDON%' OR ref.BID_DESCRIPTION LIKE '%NEW YORK%' THEN 25 + (UNIFORM(0, 30, RANDOM()))
-                    WHEN ref.BID_DESCRIPTION LIKE '%ALBERTA%' OR ref.BID_DESCRIPTION LIKE '%SCOTLAND%' THEN 5 + (UNIFORM(0, 20, RANDOM()))
+            ELSE
+                CASE
+                    WHEN BID_DESCRIPTION LIKE '%LONDON%' OR BID_DESCRIPTION LIKE '%NEW YORK%' THEN 25 + (UNIFORM(0, 30, RANDOM()))
+                    WHEN BID_DESCRIPTION LIKE '%ALBERTA%' OR BID_DESCRIPTION LIKE '%SCOTLAND%' THEN 5 + (UNIFORM(0, 20, RANDOM()))
                     ELSE 15 + (UNIFORM(0, 25, RANDOM()))
                 END
+        END::DECIMAL(38,2) AS prb_dl,
+        -- PM_PRB_UTIL_UL: Heavily skewed toward zero (median 0, average ~8)
+        CASE 
+            WHEN UNIFORM(1, 100, RANDOM()) <= 50 THEN 0  -- 50% are zero
+            WHEN UNIFORM(1, 100, RANDOM()) <= 80 THEN UNIFORM(1, 15, RANDOM())  -- 30% low values
+            WHEN UNIFORM(1, 100, RANDOM()) <= 95 THEN UNIFORM(15, 40, RANDOM()) -- 15% medium
+            ELSE UNIFORM(40, 72, RANDOM())  -- 5% high
         END::DECIMAL(38,2),
-        ROUND(PM_PRB_UTIL_DL * (0.6 + (UNIFORM(0, 21, RANDOM()) * 0.01)), 0),
-        MD5(TO_VARCHAR(ref.CELL_ID) || TO_VARCHAR(:new_timestamp) || 'unique')
-    FROM GENERATE.REF_CELL_TOWER_ATTRIBUTES ref;
+        MD5(TO_VARCHAR(CELL_ID) || TO_VARCHAR(ts_hour) || 'unique')
+    FROM base_data;
     
     rows_inserted := SQLROWCOUNT;
     
-    RETURN 'Generated ' || rows_inserted || ' cell tower records for timestamp: ' || TO_VARCHAR(:new_timestamp);
+    RETURN 'Generated ' || rows_inserted || ' cell tower records for hour: ' || TO_VARCHAR(:new_timestamp);
 END;
 $$;
 
-SELECT 'Step 3 Complete: Cell Tower data generation procedure created' AS STATUS;
+SELECT 'Step 3 Complete: Cell Tower data generation procedure created (HOURLY)' AS STATUS;
 
 -- ===============================================================================
 -- STEP 4: CREATE STORED PROCEDURE FOR SUPPORT TICKET GENERATION
@@ -431,7 +463,7 @@ BEGIN
     -- Get the next ticket ID
     SELECT 'TR' || LPAD(TO_VARCHAR(COALESCE(MAX(CAST(SUBSTR(TICKET_ID, 3) AS INT)), 10000) + 1), 5, '0')
     INTO :next_ticket_id
-    FROM GENERATE.SUPPORT_TICKETS_TEST;
+    FROM TELCO_NETWORK_OPTIMIZATION_PROD.RAW.SUPPORT_TICKETS;
     
     -- If no tickets exist yet, start from TR10001
     IF (next_ticket_id IS NULL) THEN
@@ -439,7 +471,7 @@ BEGIN
     END IF;
     
     -- Generate one support ticket
-    INSERT INTO GENERATE.SUPPORT_TICKETS_TEST (
+    INSERT INTO TELCO_NETWORK_OPTIMIZATION_PROD.RAW.SUPPORT_TICKETS (
         TICKET_ID, CUSTOMER_NAME, CUSTOMER_EMAIL, SERVICE_TYPE, REQUEST,
         CONTACT_PREFERENCE, CELL_ID, SENTIMENT_SCORE
     )
@@ -503,39 +535,43 @@ SELECT 'Step 4 Complete: Support Ticket generation procedure created' AS STATUS;
 -- STEP 5: CREATE SNOWFLAKE TASKS
 -- ===============================================================================
 
--- Task for Cell Tower data generation (runs every minute)
+-- Task for Cell Tower data generation (SERVERLESS, runs every MINUTE, data increments by 1 HOUR)
 CREATE OR REPLACE TASK GENERATE.TASK_GENERATE_CELL_TOWER_DATA
-    WAREHOUSE = MYWH
     SCHEDULE = '1 MINUTE'
 AS
     CALL GENERATE.SP_GENERATE_CELL_TOWER_DATA();
 
--- Task for Support Ticket generation (runs every minute)
+-- Task for Support Ticket generation (SERVERLESS, runs every MINUTE)
 CREATE OR REPLACE TASK GENERATE.TASK_GENERATE_SUPPORT_TICKET
-    WAREHOUSE = MYWH
     SCHEDULE = '1 MINUTE'
 AS
     CALL GENERATE.SP_GENERATE_SUPPORT_TICKET();
 
-SELECT 'Step 5 Complete: Snowflake tasks created (currently suspended)' AS STATUS;
+SELECT 'Step 5 Complete: Serverless tasks created (run every MINUTE for demo streaming)' AS STATUS;
 
 -- ===============================================================================
 -- SETUP COMPLETE
 -- ===============================================================================
 
-SELECT '✅ DATA GENERATOR SETUP COMPLETE!' AS STATUS;
+SELECT '✅ DATA GENERATOR SETUP COMPLETE - DEMO STREAMING MODE!' AS STATUS;
 SELECT '' AS BLANK_LINE;
 SELECT 'Summary:' AS SECTION;
 SELECT '- GENERATE schema created' AS ITEM
-UNION ALL SELECT '- Test tables created (CELL_TOWER_TEST, SUPPORT_TICKETS_TEST)' AS ITEM
 UNION ALL SELECT '- Reference tables populated with existing data patterns' AS ITEM
-UNION ALL SELECT '- Cell tower generation procedure created' AS ITEM
-UNION ALL SELECT '- Support ticket generation procedure created' AS ITEM
-UNION ALL SELECT '- Two Snowflake tasks created (suspended by default)' AS ITEM;
+UNION ALL SELECT '- Cell tower generation procedure created (writes to RAW.CELL_TOWER)' AS ITEM
+UNION ALL SELECT '- Support ticket generation procedure created (writes to RAW.SUPPORT_TICKETS)' AS ITEM
+UNION ALL SELECT '- Two SERVERLESS tasks created (run every MINUTE, suspended by default)' AS ITEM;
+SELECT '' AS BLANK_LINE;
+SELECT 'Demo Mode Details:' AS SECTION;
+SELECT '- Tasks run every 1 MINUTE' AS ITEM
+UNION ALL SELECT '- Each execution generates data with timestamps incrementing by 1 HOUR' AS ITEM
+UNION ALL SELECT '- Effect: 1 minute of real time = 1 hour of data time (fast-forward demo)' AS ITEM
+UNION ALL SELECT '- ~14,000 cell tower records generated per minute' AS ITEM
+UNION ALL SELECT '- 1 support ticket generated per minute' AS ITEM;
 SELECT '' AS BLANK_LINE;
 SELECT 'Next Steps:' AS SECTION;
 SELECT '1. Review the setup' AS ITEM
-UNION ALL SELECT '2. Use manage_data_generators.sql to start/stop/monitor tasks' AS ITEM
-UNION ALL SELECT '3. Monitor CELL_TOWER_TEST and SUPPORT_TICKETS_TEST tables' AS ITEM
-UNION ALL SELECT '4. When satisfied, you can modify procedures to write to RAW schema' AS ITEM;
+UNION ALL SELECT '2. Use manage_data_generators.sql or START_DEMO.sql to start tasks' AS ITEM
+UNION ALL SELECT '3. Monitor RAW.CELL_TOWER and RAW.SUPPORT_TICKETS tables' AS ITEM
+UNION ALL SELECT '4. Use STOP_DEMO.sql to suspend tasks when done' AS ITEM;
 
