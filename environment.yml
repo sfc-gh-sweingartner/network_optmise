@@ -1,23 +1,16 @@
-# Telco Network Optimization - Snowflake Streamlit Environment
-# Simple package list format for Streamlit in Snowflake
-
-# Core Streamlit and data processing
-streamlit
-pandas
-numpy
-
-# Geospatial and visualization
-pydeck
-plotly
-matplotlib
-h3-py
-branca
-
-# Statistical analysis  
-scipy
-
-# Snowflake integration (handled by Snowflake environment)
-# snowflake-snowpark-python
-
-# Additional utilities
-altair
+name: telco_network_optimization
+channels:
+  - snowflake
+dependencies:
+  - python=3.11.*
+  - streamlit=
+  - snowflake-snowpark-python=
+  - pandas=
+  - numpy=
+  - pydeck=
+  - matplotlib=
+  - plotly=
+  - altair=
+  - scipy=
+  - h3-py=
+  - branca=
