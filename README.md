@@ -32,7 +32,7 @@ Run the `connectMapBoxNoKey.sql` script to set up the necessary network access i
 
 ### 2. App Structure
 
-The application follows Snowflake's multi-page Streamlit app structure:
+The application follows Snowflake's multi-page Streamlit app structure
 
 ```
 /
