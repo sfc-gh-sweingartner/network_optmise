@@ -1,21 +1,23 @@
-# Snowflake Streamlit Environment File
-# This is for a Legacy Streamlit in Snowflake app (Python 3.10)
-# All packages must be from the Snowflake Anaconda channel
-# https://repo.anaconda.com/pkgs/snowflake/
+# Telco Network Optimization - Snowflake Streamlit Environment
+# Simple package list format for Streamlit in Snowflake
 
-name: streamlit
-channels:
-  - snowflake
-dependencies:
-  - python=3.10
-  - streamlit
-  - snowflake-snowpark-python
-  - pandas
-  - numpy
-  - pydeck
-  - matplotlib
-  - plotly
-  - altair
-  - scipy
-  - h3-py
-  - branca
+# Core Streamlit and data processing
+streamlit
+pandas
+numpy
+
+# Geospatial and visualization
+pydeck
+plotly
+matplotlib
+h3-py
+branca
+
+# Statistical analysis  
+scipy
+
+# Snowflake integration (handled by Snowflake environment)
+# snowflake-snowpark-python
+
+# Additional utilities
+altair
