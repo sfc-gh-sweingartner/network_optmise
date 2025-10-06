@@ -785,6 +785,7 @@ st.subheader("🗺️ Multi-Metric Geospatial Analysis")
 # Always render the main visualization using H3HexagonLayers
 st.pydeck_chart(
     pdk.Deck(
+        map_provider="mapbox",
         map_style="mapbox://styles/mapbox/light-v9", 
         initial_view_state=pdk.ViewState(
             latitude=center_lat,
