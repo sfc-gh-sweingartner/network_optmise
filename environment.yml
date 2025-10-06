@@ -1,0 +1,21 @@
+# Snowflake Streamlit Environment File
+# This is for a Legacy Streamlit in Snowflake app (Python 3.11)
+# All packages must be from the Snowflake Anaconda channel
+# https://repo.anaconda.com/pkgs/snowflake/
+
+name: streamlit
+channels:
+  - snowflake
+dependencies:
+  - python=3.11
+  - streamlit
+  - snowflake-snowpark-python
+  - pandas
+  - numpy
+  - pydeck
+  - matplotlib
+  - plotly
+  - altair
+  - scipy
+  - h3-py
+  - branca
