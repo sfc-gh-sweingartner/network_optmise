@@ -200,13 +200,26 @@ if len(selection_data) > 0:
   # Show the plot in Streamlit
   col3.pyplot(fig3)
 
-  prompt = f"""
-    You are a network engineer tasked with improving customer experience, adoption, and reducing call failures. \
+  st.write("#### Suggestion from LLM:")
+  
+  try:
+    # Convert dataframes to string format that won't break SQL
+    df_str = df.to_string(index=False)
+    loyalty_str = loyalty_data.to_string()
+    sentiment_str = sentiment_score.to_string(index=False)
+    
+    prompt = f"""
+    You are a network engineer tasked with improving customer experience, adoption, and reducing call failures. 
     Based on the following data, provide recommendations on which cell to prioritize for improvements:
 
-    1. Failure Rate for Each Cell: {df}
-    2. Customer Loyalty Status by Cell (Bronze, Silver, Gold): {loyalty_data}
-    3. Call Center Transcripts Sentiment Score by Cell: {sentiment_score}
+    1. Failure Rate for Each Cell:
+    {df_str}
+    
+    2. Customer Loyalty Status by Cell (Bronze, Silver, Gold):
+    {loyalty_str}
+    
+    3. Call Center Transcripts Sentiment Score by Cell:
+    {sentiment_str}
 
     Consider the following when making recommendations:
     - Cells with high failure rates and low loyalty status may require immediate attention.
@@ -214,10 +227,17 @@ if len(selection_data) > 0:
     - Focus on cells with high adoption potential and lower failure rates for optimal impact on customer experience.
 
     Based on this data, suggest which cell should be prioritized for fixes, the reasons for that choice.
-  """
+    """
 
-  prompt = prompt.replace("'", "''")
+    # Escape single quotes for SQL
+    prompt = prompt.replace("'", "''")
 
-  suggestion = session.sql(f"select snowflake.cortex.complete('mistral-large', '{prompt}') as res").to_pandas()
-  st.write("#### Suggestion from LLM:")
-  st.markdown(suggestion["RES"][0]) 
+    with st.spinner("Generating AI recommendations..."):
+      suggestion = session.sql(f"select snowflake.cortex.complete('mistral-large', '{prompt}') as res").to_pandas()
+      st.markdown(suggestion["RES"][0])
+      
+  except Exception as e:
+    st.error(f"Error generating LLM suggestion: {str(e)}")
+    st.write("Debug info:")
+    st.write(f"Number of cells selected: {len(df)}")
+    st.write(f"Cell IDs: {df['Cell ID'].tolist() if len(df) > 0 else 'None'}") 
