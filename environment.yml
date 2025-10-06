@@ -1,5 +1,5 @@
 # Snowflake Streamlit Environment File
-# This is for a Legacy Streamlit in Snowflake app (Python 3.11)
+# This is for a Legacy Streamlit in Snowflake app (Python 3.10)
 # All packages must be from the Snowflake Anaconda channel
 # https://repo.anaconda.com/pkgs/snowflake/
 
@@ -7,7 +7,7 @@ name: streamlit
 channels:
   - snowflake
 dependencies:
-  - python=3.11
+  - python=3.10
   - streamlit
   - snowflake-snowpark-python
   - pandas
