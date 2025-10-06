@@ -76,10 +76,12 @@ view_state = pdk.ViewState(
     pitch=50,
 )
 
-# Display the map using PyDeck with Carto basemap (works without API key)
+# Display the map using PyDeck without requiring explicit Mapbox API key
+# Snowflake's Streamlit environment provides access to Mapbox tiles by default
 st.session_state.event = st.pydeck_chart(
     pdk.Deck(
-        map_style="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+        map_provider="mapbox",
+        map_style="mapbox://styles/mapbox/light-v9",
         layers=[grid_layer],
         initial_view_state=view_state,
     ), on_select="rerun", selection_mode="single-object"
